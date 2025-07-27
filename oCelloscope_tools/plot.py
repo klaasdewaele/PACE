@@ -265,24 +265,53 @@ def plot_overview(df, a, t, p, s, output_path, label, copy_path):
         df_EA_from_c = df.loc[(df['c'].str.contains('EA', na=False))]
         df_CA_from_c = df.loc[(df['c'].str.contains('CA', na=False))]
         
+        # Also include single configuration results for both EA and CA plotting
+        df_single_config = df.loc[(df['c'].str.contains('single_config', na=False))]
+        if not df_single_config.empty:
+            # Reset indices to avoid alignment issues when concatenating
+            df_EA_from_c = df_EA_from_c.reset_index(drop=True)
+            df_CA_from_c = df_CA_from_c.reset_index(drop=True)
+            df_single_config = df_single_config.reset_index(drop=True)
+            df_EA_from_c = pd.concat([df_EA_from_c, df_single_config], ignore_index=True)
+            df_CA_from_c = pd.concat([df_CA_from_c, df_single_config], ignore_index=True)
+        
         # Use the data from 'c' column if the criterium-based filtering didn't work
         if df_EA.empty and not df_EA_from_c.empty:
             df_EA = df_EA_from_c
         if df_CA.empty and not df_CA_from_c.empty:
             df_CA = df_CA_from_c
 
-    # Handle the case where phase column might not exist
-    phase_filter = df['phase'] != 'pre_bias_corr' if 'phase' in df.columns else True
-    
-    df_EA_without_pre = df_EA.loc[phase_filter] if not df_EA.empty else pd.DataFrame()
-    df_CA_without_pre = df_CA.loc[phase_filter] if not df_CA.empty else pd.DataFrame()
-    
-    if 'best_shift_corr' in df.columns:
-        df_EA_per = df_EA.loc[(df_EA['best_shift_corr'] == 'best')][['EA', 'CA', 'VME_rate', 'ME_rate', 'time', 'ATU_VME_rate', 'ATU_ME_rate']] if not df_EA.empty else pd.DataFrame()
-        df_CA_per = df_CA.loc[(df_CA['best_shift_corr'] == 'best')][['EA', 'CA', 'VME_rate', 'ME_rate', 'time', 'ATU_VME_rate', 'ATU_ME_rate']] if not df_CA.empty else pd.DataFrame()
+    # Handle the case where phase column might not exist - create filters specific to each subset
+    if not df_EA.empty and 'phase' in df_EA.columns:
+        phase_filter_EA = df_EA['phase'] != 'pre_bias_corr'
+        df_EA_without_pre = df_EA.loc[phase_filter_EA]
+    elif not df_EA.empty:
+        df_EA_without_pre = df_EA
     else:
-        df_EA_per = df_EA_without_pre[['EA', 'CA', 'VME_rate', 'ME_rate', 'time', 'ATU_VME_rate', 'ATU_ME_rate']] if not df_EA_without_pre.empty else pd.DataFrame()
-        df_CA_per = df_CA_without_pre[['EA', 'CA', 'VME_rate', 'ME_rate', 'time', 'ATU_VME_rate', 'ATU_ME_rate']] if not df_CA_without_pre.empty else pd.DataFrame()
+        df_EA_without_pre = pd.DataFrame()
+    
+    if not df_CA.empty and 'phase' in df_CA.columns:
+        phase_filter_CA = df_CA['phase'] != 'pre_bias_corr'
+        df_CA_without_pre = df_CA.loc[phase_filter_CA]
+    elif not df_CA.empty:
+        df_CA_without_pre = df_CA
+    else:
+        df_CA_without_pre = pd.DataFrame()
+    
+    # Handle best_shift_corr filtering - check each subset individually
+    if not df_EA.empty and 'best_shift_corr' in df_EA.columns:
+        df_EA_per = df_EA.loc[(df_EA['best_shift_corr'] == 'best')][['EA', 'CA', 'VME_rate', 'ME_rate', 'time', 'ATU_VME_rate', 'ATU_ME_rate']]
+    elif not df_EA_without_pre.empty:
+        df_EA_per = df_EA_without_pre[['EA', 'CA', 'VME_rate', 'ME_rate', 'time', 'ATU_VME_rate', 'ATU_ME_rate']]
+    else:
+        df_EA_per = pd.DataFrame()
+    
+    if not df_CA.empty and 'best_shift_corr' in df_CA.columns:
+        df_CA_per = df_CA.loc[(df_CA['best_shift_corr'] == 'best')][['EA', 'CA', 'VME_rate', 'ME_rate', 'time', 'ATU_VME_rate', 'ATU_ME_rate']]
+    elif not df_CA_without_pre.empty:
+        df_CA_per = df_CA_without_pre[['EA', 'CA', 'VME_rate', 'ME_rate', 'time', 'ATU_VME_rate', 'ATU_ME_rate']]
+    else:
+        df_CA_per = pd.DataFrame()
     
     dfm_EA = df_EA_per.melt('time', var_name='cols', value_name='vals') if not df_EA_per.empty else pd.DataFrame()
     dfm_CA = df_CA_per.melt('time', var_name='cols', value_name='vals') if not df_CA_per.empty else pd.DataFrame()

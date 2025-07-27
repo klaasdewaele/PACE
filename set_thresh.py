@@ -169,7 +169,43 @@ def calculate_single_configuration_performance(timepoint, antimycotic, parameter
     """
     logging.info(f'--- --- Single configuration detected: calculating performance directly for {parameter} with threshold {threshold}')
     
-    # Calculate performance metrics directly using the existing evaluation function
+    # Initialize the di structure that get_agreement_parameters_ext expects
+    # This mimics what get_best_thresholds_bis does but for a single threshold
+    if antimycotic not in di:
+        di[antimycotic] = {}
+    if timepoint not in di[antimycotic]:
+        di[antimycotic][timepoint] = {}
+    if parameter not in di[antimycotic][timepoint]:
+        di[antimycotic][timepoint][parameter] = {}
+    
+    # Initialize the performance metrics list [total_MIC_distance, VME_count, ME_count, ATU_VME_count, ATU_ME_count]
+    di[antimycotic][timepoint][parameter][threshold] = [0, 0, 0, 0, 0]
+    
+    # We need to calculate the actual performance metrics by iterating through files
+    # This is what normally happens in get_best_thresholds_bis but we do it directly here
+    for file in files_with_data:
+        try:
+            # Get the MIC distance and categorical errors for this file
+            distance = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['distance']
+            VME = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['VME']
+            ME = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['ME']
+            ATU_VME = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['ATU_VME']
+            ATU_ME = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['ATU_ME']
+            
+            # Sum up the metrics across all files
+            di[antimycotic][timepoint][parameter][threshold][0] += distance  # total_MIC_distance
+            di[antimycotic][timepoint][parameter][threshold][1] += VME       # VME_count
+            di[antimycotic][timepoint][parameter][threshold][2] += ME        # ME_count  
+            di[antimycotic][timepoint][parameter][threshold][3] += ATU_VME   # ATU_VME_count
+            di[antimycotic][timepoint][parameter][threshold][4] += ATU_ME    # ATU_ME_count
+            
+        except KeyError as e:
+            logging.debug(f'No prediction data for file {file}: {e}')
+            # If no prediction data, treat as a major error (distance = 12 is used for failed predictions)
+            di[antimycotic][timepoint][parameter][threshold][0] += 12
+            di[antimycotic][timepoint][parameter][threshold][2] += 1  # Count as ME
+    
+    # Now calculate performance metrics directly using the existing evaluation function
     agreement_dict = evaluate.get_agreement_parameters_ext(antimycotic, timepoint, parameter, threshold, di, files_with_data, files_with_breakpoint)
     
     # Create the performance_per_timepoint dictionary in the same format as the optimization functions
@@ -193,6 +229,12 @@ def calculate_single_configuration_performance(timepoint, antimycotic, parameter
     
     # Calculate total_errors (sum of weighted categorical errors)
     performance_per_timepoint['total_errors'] = agreement_dict.get('min_errors_weighted', 0)
+    
+    # Add dist_per_file for bias correction compatibility (even though single config doesn't need it)
+    performance_per_timepoint['dist_per_file'] = agreement_dict.get('distance_per_file', {})
+    
+    # Add 'c' field for plotting compatibility - use 'single_config' to identify these results
+    performance_per_timepoint['c'] = 'single_config_EA_CA'
     
     logging.info(f'--- --- Single configuration performance: EA={agreement_dict.get("EA", "N/A"):.3f}, CA={agreement_dict.get("CA", "N/A"):.3f}, Total errors={performance_per_timepoint["total_errors"]}')
     
@@ -591,132 +633,153 @@ for timepoint in timepoints:
         # Add training status
         performance_per_timepoint['training'] = training
 
+        # Check if this is a single configuration scenario - skip bias correction entirely
+        is_single_config = is_single_configuration(parameters_to_predict, thresholds, timepoint, antimycotic, sec_bias_corr)
+
         # The path to the new di and output_dir are entries in the dictionary
         if args.rerun == 'bias': # 'bias' flag set in case of rerun of pipeline for bias correction - finish_rerun() to prevent endless bias correction
-                # finish_rerun writes performance_per_timepoint to parent script and does sys.flush() and sys.exit()
-                finish_rerun(args.rerun, performance_per_timepoint)
-            elif args.rerun == 'bagging' and not training: # training False here because threshold_dict path provided as pipeline argument (args.b)
-                # When this clause? For 'test' runs while bagging: bagging True and training False: prevent bias correction and nested bagging 
-                logging.info(f'--- --- --- Non-training run: no bias correction.')
-                finish_rerun(args.rerun, performance_per_timepoint)
-            #elif criterium == "total_MIC_distance": # Only in case of minimizing total_MIC_distance, do bias correction - not for min_weighted_errors
-            else: # removed requirement of min_distance criterium: what is rationale behind this? Also, this would not work when using "CA_0.90" optimization.
-	        # If setting threshold, detect systematic error: average MIC distances across files of best threshold: if different from 0, skip plotting, and rerun pipeline with bias correction
-                dist_per_file = performance_per_timepoint['dist_per_file']
-                # calculate median
-                average = int(round(statistics.median(dist_per_file.values()), 0))
-                #total = 0
-                #for file, distance in dist_per_file.items():
-                    #total += distance
-                #average = int(round(total/len(dist_per_file.keys()), 0))
-                beautiful_dict = pprint.pformat(performance_per_timepoint)
-                logging.info(f'--- --- --- Bias of {average} log2 dilutions. Performance_per_timepoint before rerun: \n\n {beautiful_dict}\n')
+            # finish_rerun writes performance_per_timepoint to parent script and does sys.flush() and sys.exit()
+            finish_rerun(args.rerun, performance_per_timepoint)
+        elif args.rerun == 'bagging' and not training: # training False here because threshold_dict path provided as pipeline argument (args.b)
+            # When this clause? For 'test' runs while bagging: bagging True and training False: prevent bias correction and nested bagging 
+            logging.info(f'--- --- --- Non-training run: no bias correction.')
+            finish_rerun(args.rerun, performance_per_timepoint)
+        elif is_single_config:
+            # Single configuration: user specified exact parameter, threshold, and bias - no additional bias correction needed
+            logging.info(f'--- --- --- Single configuration detected: skipping bias correction (user specified exact bias: {bias})')
+            performance_per_timepoint['phase'] = 'single_config_no_bias_corr'
+            performance_chron.append(performance_per_timepoint)
+            
+            # Set up variables for plotting (no bias correction means we use original di and output_dir)
+            di_plot = di
+            output_dir_rerun = output_dir
+            
+            # Create highlight structure for plotting (same as optimization path)
+            highlight = {} 
+            for file, distance in performance_per_timepoint['dist_per_file'].items(): 
+                highlight[file] = {} # highlight[file][parameter][threshold]
+                highlight[file][performance_per_timepoint['parameter']] = {}
+                highlight[file][performance_per_timepoint['parameter']][performance_per_timepoint['threshold']] = distance
+            
+            beautiful_dict = pprint.pformat(performance_per_timepoint)
+            logging.info(f'--- --- --- Single configuration performance (no bias correction): \n\n {beautiful_dict}\n')
+        #elif criterium == "total_MIC_distance": # Only in case of minimizing total_MIC_distance, do bias correction - not for min_weighted_errors
+        else: # removed requirement of min_distance criterium: what is rationale behind this? Also, this would not work when using "CA_0.90" optimization.
+            # If setting threshold, detect systematic error: average MIC distances across files of best threshold: if different from 0, skip plotting, and rerun pipeline with bias correction
+            dist_per_file = performance_per_timepoint['dist_per_file']
+            # calculate median
+            average = int(round(statistics.median(dist_per_file.values()), 0))
+            #total = 0
+            #for file, distance in dist_per_file.items():
+                #total += distance
+            #average = int(round(total/len(dist_per_file.keys()), 0))
+            beautiful_dict = pprint.pformat(performance_per_timepoint)
+            logging.info(f'--- --- --- Bias of {average} log2 dilutions. Performance_per_timepoint before rerun: \n\n {beautiful_dict}\n')
 
-                # Document pre-bias correction performance
-                performance_per_timepoint['phase'] = 'pre_bias_corr'
+            # Document pre-bias correction performance
+            performance_per_timepoint['phase'] = 'pre_bias_corr'
+            performance_chron.append(performance_per_timepoint)
+
+
+            if isinstance(sec_bias_corr, list):
+                # Initialize based on whether we want to minimize or maximize the criterion
+                if criterium in ['EA', 'CA']:
+                    # For EA and CA, we want the HIGHEST values (best performance)
+                    best_total_errors = -np.inf
+                    comparison_func = lambda new_val, best_val: new_val > best_val
+                    logging.info(f'Optimizing for HIGHEST {criterium} values')
+                else:
+                    # For min_errors_weighted, total_MIC_distance, etc., we want the LOWEST values
+                    best_total_errors = np.inf
+                    comparison_func = lambda new_val, best_val: new_val < best_val
+                    logging.info(f'Optimizing for LOWEST {criterium} values')
+                
+                for shift in sec_bias_corr:
+                    logging.info(f'\n\n shift {shift} in {sec_bias_corr}')
+                    performance_per_timepoint_shift, output_dir_rerun_shift, di_plot_shift = pipeline_rerun(m=shift, rerun='bias', c=[(criteria[0][0], criteria[0][1])], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir, args=args)
+                    performance_per_timepoint_shift['phase'] = f'shift_{shift}'
+                    performance_chron.append(performance_per_timepoint_shift)
+                    if comparison_func(performance_per_timepoint_shift['total_errors'], best_total_errors):
+                        logging.info(f'New best bias correction: {shift} - total errors is {performance_per_timepoint_shift["total_errors"]}, previous {best_total_errors}')
+                        best_total_errors = performance_per_timepoint_shift['total_errors']
+                        performance_per_timepoint = performance_per_timepoint_shift.copy()
+                        output_dir_rerun = output_dir_rerun_shift
+                        di_plot = di_plot_shift
+                performance_per_timepoint['best_shift_corr'] = 'best'
+                logging.warning(f'added dict with best total errors {best_total_errors} and shift {performance_per_timepoint["phase"]} to performance_chron list')
+                performance_chron.append(performance_per_timepoint) 
+
+            # This clause enables automated bias dtection and bias correction, in practice empiric bias correction over range works better than one derived from average error
+            elif average != 0:
+                logging.info(f'Systematic bias detected of {average} log2 dilutions; plotting skipped and rerun pipeline with correction factor')
+                # Rerun pipeline with 'bias' flag for this one timepoint and add to performance_chronological list
+                # pipeline_rerun() @provides modified di (called 'di_plot') and output directory of the nested run, for the plotting function
+                performance_per_timepoint, output_dir_rerun, di_plot = pipeline_rerun(m=average, rerun='bias', c=[(criteria[0][0], criteria[0][1])], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir, args=args)
+                bias_corr_cycle_number = 0
+                while bias_corr_cycle_number <= 2:
+                    average = int(round(statistics.median(performance_per_timepoint['dist_per_file'].values()), 0))
+                    logging.info(f'Remaining systematic error: {average}')
+                    if average != 0:
+                        bias_corr_cycle_number += 1
+                        logging.info(f'Rerun bias correction number {bias_corr_cycle_number}')
+                        # increase bias correction: isolate sign of average and add bias_corr_cycle_number: -1 becomes -2, becomes -3 ...
+                        average = int(math.copysign(1, average) * (abs(average) + bias_corr_cycle_number))
+                        logging.info(f'New bias correction: {average}')
+                        performance_per_timepoint, output_dir_rerun, di_plot = pipeline_rerun(m=average, rerun='bias', c=[(criteria[0][0], criteria[0][1])], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir, args=args)
+                    else:
+                        break
+                performance_per_timepoint['phase'] = 'bias_corrected_cycle_{bias_corr_cycle_number}'
+                performance_chron.append(performance_per_timepoint)
+            else: # In case of no bias document performance_per_timepoint
+                di_plot = di
+                output_dir_rerun = output_dir  # Use main output directory when no bias correction
+                performance_per_timepoint['phase'] = 'no_bias_corr'
                 performance_chron.append(performance_per_timepoint)
 
-                
-                if isinstance(sec_bias_corr, list):
-                    # Initialize based on whether we want to minimize or maximize the criterion
-                    if criterium in ['EA', 'CA']:
-                        # For EA and CA, we want the HIGHEST values (best performance)
-                        best_total_errors = -np.inf
-                        comparison_func = lambda new_val, best_val: new_val > best_val
-                        logging.info(f'Optimizing for HIGHEST {criterium} values')
-                    else:
-                        # For min_errors_weighted, total_MIC_distance, etc., we want the LOWEST values
-                        best_total_errors = np.inf
-                        comparison_func = lambda new_val, best_val: new_val < best_val
-                        logging.info(f'Optimizing for LOWEST {criterium} values')
-                    
-                    for shift in sec_bias_corr:
-                        logging.info(f'\n\n shift {shift} in {sec_bias_corr}')
-                        performance_per_timepoint_shift, output_dir_rerun_shift, di_plot_shift = pipeline_rerun(m=shift, rerun='bias', c=[(criteria[0][0], criteria[0][1])], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir, args=args)
-                        performance_per_timepoint_shift['phase'] = f'shift_{shift}'
-                        performance_chron.append(performance_per_timepoint_shift)
-                        if comparison_func(performance_per_timepoint_shift['total_errors'], best_total_errors):
-                            logging.info(f'New best bias correction: {shift} - total errors is {performance_per_timepoint_shift["total_errors"]}, previous {best_total_errors}')
-                            best_total_errors = performance_per_timepoint_shift['total_errors']
-                            performance_per_timepoint = performance_per_timepoint_shift.copy()
-                            output_dir_rerun = output_dir_rerun_shift
-                            di_plot = di_plot_shift
-                    performance_per_timepoint['best_shift_corr'] = 'best'
-                    logging.warning(f'added dict with best total errors {best_total_errors} and shift {performance_per_timepoint["phase"]} to performance_chron list')
-                    performance_chron.append(performance_per_timepoint) 
+            if args.rerun == 'bagging': # To prevent endless recursive bagging (see below), terminate this training cycle here
+                logging.warning(f'Terminating training cycle. Writing performance_per_timepoint to parent process.')
+                finish_rerun(args.rerun, performance_per_timepoint)
 
-                # This clause enables automated bias dtection and bias correction, in practice empiric bias correction over range works better than one derived from average error
-                elif average != 0:
-                    logging.info(f'Systematic bias detected of {average} log2 dilutions; plotting skipped and rerun pipeline with correction factor')
-                    # Rerun pipeline with 'bias' flag for this one timepoint and add to performance_chronological list
-                    # pipeline_rerun() @provides modified di (called 'di_plot') and output directory of the nested run, for the plotting function
-                    performance_per_timepoint, output_dir_rerun, di_plot = pipeline_rerun(m=average, rerun='bias', c=[(criteria[0][0], criteria[0][1])], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir, args=args)
-                    bias_corr_cycle_number = 0
-                    while bias_corr_cycle_number <= 2:
-                        average = int(round(statistics.median(performance_per_timepoint['dist_per_file'].values()), 0))
-                        logging.info(f'Remaining systematic error: {average}')
-                        if average != 0:
-                            bias_corr_cycle_number += 1
-                            logging.info(f'Rerun bias correction number {bias_corr_cycle_number}')
-                            # increase bias correction: isolate sign of average and add bias_corr_cycle_number: -1 becomes -2, becomes -3 ...
-                            average = int(math.copysign(1, average) * (abs(average) + bias_corr_cycle_number))
-                            logging.info(f'New bias correction: {average}')
-                            performance_per_timepoint, output_dir_rerun, di_plot = pipeline_rerun(m=average, rerun='bias', c=[(criteria[0][0], criteria[0][1])], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir, args=args)
-                        else:
-                            break
-                    performance_per_timepoint['phase'] = 'bias_corrected_cycle_{bias_corr_cycle_number}'
-                    performance_chron.append(performance_per_timepoint)
-                else: # In case of no bias document performance_per_timepoint
-                    di_plot = di
-                    output_dir_rerun = output_dir  # Use main output directory when no bias correction
-                    performance_per_timepoint['phase'] = 'no_bias_corr'
-                    performance_chron.append(performance_per_timepoint)
-
-                if args.rerun == 'bagging': # To prevent endless recursive bagging (see below), terminate this training cycle here
-                    logging.warning(f'Terminating training cycle. Writing performance_per_timepoint to parent process.')
-                    finish_rerun(args.rerun, performance_per_timepoint)
-
-                # For bagging, we need here to rerun pipeline n cycles times
-                while args.b and cycles != 0:
-                    logging.warning(f'Cycle {cycles}/{cycles_start}. Now TEST RUN.')
-                    # rerun pipeline in non-training mode: this is flagged by providing path to threshold_dict, which was returned from evaluate.get_best_parameter()
-                    # What does training False mean? define_threshold() will define one parameter-threshold pair in thresholds dict (thresholds[timepoint][antimycotic][parameter]) 
-                    # The pipeline will terminate after evaluate.get_best_parameter() (which returns performance per timepoint dataframe) 
-                    training_data = files_with_data + files_to_remove # These files need to be removed in a test run: supply for -r argument
-                    logging.info(f'These files will be removed from test run: {training_data}')
-                    performance_per_timepoint, output_dir_rerun, di_plot = pipeline_rerun(args=args, b=f'({cycles}, {bootstrap_size}, "{str(threshold_dict_path)}")', rerun='bagging', c=[(EA_CA, criterium)], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir, r=f"{training_data}")
-                    performance_per_timepoint['phase'] = 'no_bias_corr'
-                    performance_chron.append(performance_per_timepoint)
-                    # do a fresh training cycle with cycles-1 - no dict path provided, which triggers training True  
-                    cycles -= 1
-                    logging.warning(f'Starting cycle {cycles}/{cycles_start}. Now TRAINING RUN.')
-                    performance_per_timepoint, output_dir_rerun, di_plot = pipeline_rerun(args=args, b=f'({cycles}, {bootstrap_size}, {None})', rerun='bagging', c=[(EA_CA, criterium)], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir)
-                    # Still to remove files used in training: f'\"{performance_per_timepoint['dist_per_file'].keys()}\"'
-                    performance_chron.append(performance_per_timepoint)                 
+            # For bagging, we need here to rerun pipeline n cycles times
+            while args.b and cycles != 0:
+                logging.warning(f'Cycle {cycles}/{cycles_start}. Now TEST RUN.')
+                # rerun pipeline in non-training mode: this is flagged by providing path to threshold_dict, which was returned from evaluate.get_best_parameter()
+                # What does training False mean? define_threshold() will define one parameter-threshold pair in thresholds dict (thresholds[timepoint][antimycotic][parameter]) 
+                # The pipeline will terminate after evaluate.get_best_parameter() (which returns performance per timepoint dataframe) 
+                training_data = files_with_data + files_to_remove # These files need to be removed in a test run: supply for -r argument
+                logging.info(f'These files will be removed from test run: {training_data}')
+                performance_per_timepoint, output_dir_rerun, di_plot = pipeline_rerun(args=args, b=f'({cycles}, {bootstrap_size}, "{str(threshold_dict_path)}")', rerun='bagging', c=[(EA_CA, criterium)], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir, r=f"{training_data}")
+                performance_per_timepoint['phase'] = 'no_bias_corr'
+                performance_chron.append(performance_per_timepoint)
+                # do a fresh training cycle with cycles-1 - no dict path provided, which triggers training True  
+                cycles -= 1
+                logging.warning(f'Starting cycle {cycles}/{cycles_start}. Now TRAINING RUN.')
+                performance_per_timepoint, output_dir_rerun, di_plot = pipeline_rerun(args=args, b=f'({cycles}, {bootstrap_size}, {None})', rerun='bagging', c=[(EA_CA, criterium)], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir)
+                # Still to remove files used in training: f'\"{performance_per_timepoint['dist_per_file'].keys()}\"'
+                performance_chron.append(performance_per_timepoint)                 
     
-                # highlight has (here redundant) structure with par and threshold, but this is needed for plotting specific thresholds from within predict() 
+            # For optimization path only: create highlight structure for plotting
+            if not is_single_config:
                 highlight = {} 
                 for file, distance in performance_per_timepoint['dist_per_file'].items(): 
                     highlight[file] = {} # highlight[file][parameter][threshold]
                     highlight[file][performance_per_timepoint['parameter']] = {}
                     highlight[file][performance_per_timepoint['parameter']][performance_per_timepoint['threshold']] = distance
-                 
-                #plot.plot(output_path=output_dir, d=d, di=di_plot, params=[performance_per_timepoint['parameter']], am=[antimycotic], files=files_with_data, 
-                #         timeframe=((20000, 90000)), criterium=criterium, thresh_dict = thresh_dict,# timepoint - 0.2 * timepoint, timepoint + 0.2 * timepoint
-                #         well_legend=ref_wells, thresh_y=performance_per_timepoint['threshold'], timepoint=timepoint, highlight=highlight,
-                #        label=performance_per_timepoint, y_lim = threshold_dict)
-                
 
-                beautiful_dict = pprint.pformat(performance_per_timepoint)
-                logging.info(f'--- --- --- Best performance_per_timepoint dict: \n\n {beautiful_dict}\n')
+        # Final performance logging and saving (for both single config and optimization paths)
+        beautiful_dict = pprint.pformat(performance_per_timepoint)
+        logging.info(f'--- --- --- Final performance_per_timepoint dict: \n\n {beautiful_dict}\n')
 
-                performance_chron_df = pd.DataFrame(performance_chron)
-                performance_chron_df.to_pickle(os.path.join(output_dir, f'performance_{label}.pkl'))  
-                performance_chron_df.to_pickle(os.path.join(copy_path, f'performance_{label}_{session_time}.pkl'))  
-                logging.info(f'Saved performance dataframe.')
+        performance_chron_df = pd.DataFrame(performance_chron)
+        performance_chron_df.to_pickle(os.path.join(output_dir, f'performance_{label}.pkl'))  
+        performance_chron_df.to_pickle(os.path.join(copy_path, f'performance_{label}_{session_time}.pkl'))  
+        logging.info(f'Saved performance dataframe.')
 
-                # Clean up temporary files after bias correction cycles complete
-                cleanup_temporary_pkl_files(output_dir_rerun, timepoint, antimycotic)
+        # Clean up temporary files after processing complete
+        if 'output_dir_rerun' in locals():
+            cleanup_temporary_pkl_files(output_dir_rerun, timepoint, antimycotic)
+        else:
+            cleanup_temporary_pkl_files(output_dir, timepoint, antimycotic)
 
     # Clean up remaining temporary files after timepoint completes
     logging.info(f'Timepoint {timepoint} completed. Cleaning up remaining temporary files.')
