@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+
+#SBATCH --ntasks=1 --cpus-per-task=8
+#SBATCH --time=10:30:00
+#SBATCH --job-name=a_a
+#SBATCH --mail-user=klaasdewaele@gmail.com
+#SBATCH --mail-type=FAIL
+#SBATCH -A lp_ea_group
+#SBATCH --cluster genius
+
+source /user/leuven/348/vsc34807/.bashrc 
+source activate ocelloscope
+cd $VSC_DATA/miniconda3/envs/ocelloscope/bin/
+set_thresh.py -g A -i $VSC_DATA/aspergillus -d $VSC_SCRATCH/oCelloscope/genus_A_d_window_6.pkl -l info -a A -t '(67000, 70000, 1800)' -s '[0.0, 1.0, 0.01]' -n amfoB_debug_dip_graphs -m "[2]" -r "['ASFU_R_TR34_1']"

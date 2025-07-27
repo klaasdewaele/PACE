@@ -1,0 +1,34 @@
+#!/data/leuven/348/vsc34807/miniconda3/bin/python
+
+import os
+import shutil
+
+# Prompt the user to enter a path
+path = input("Enter a path: ")
+
+# Check if the path is valid
+if not os.path.isdir(path):
+  print("Invalid path")
+  exit()
+
+# Create a dictionary with the old names and new names for the xlsx files
+name_map = {'A-ATCC-204305 72 scan areas.xlsx': 'ASFU_ATCC_204305_S', 'A-93624221 72 scan areas.xlsx': 'ASFU_S_1', 'A-94943434 60 scan areas.xlsx': 'ASFU_S_2', 'A-96043965 72 scan areas.xlsx': 'ASFU_S_3', 'A-95746873 60 scan areas.xlsx': 'ASFU_S_4', 'A-95551158 72 scan areas.xlsx': 'ASFU_S_5', 'A-95761404 72 scan areas.xlsx': 'ASFU_S_6', 'A-95707146 72 scan areas.xlsx': 'ASFU_S_7', 'A-94991776 60 scan areas.xlsx': 'ASFU_S_8', 'A-94329739 60 scan areas.xlsx': 'ASFU_R_TR34_1', 'A-94512364 60 scan areas.xlsx': 'ASFU_R_TR34_2', 'A-CYP-15-232 72 scan areas.xlsx': 'ASFU_R_TR34_3', 'A-CYP-15-183 72 scan areas.xlsx': 'ASFU_R_TR34_4', 'A-CYP-15-234 72 scan areas.xlsx': 'ASFU_R_TR34_5', 'A-CYP-15-229 72 scan areas.xlsx': 'ASFU_R_TR34_6', 'A-CYP-15-202 72 scan areas.xlsx': 'ASFU_R_TR34_7', 'A-CYP-15-231 96 scan areas.xlsx': 'ASFU_R_TR34_8', 'A-CYP-15-235 96 scan areas.xlsx': 'ASFU_R_TR34_9', 'A-CYP-15-207 96 scan areas.xlsx': 'ASFU_R_TR34_10', 'A-CYP-15-208 96 scan areas.xlsx': 'ASFU_R_TR34_11', 'A-CYP-15-198 72 scan areas.xlsx': 'ASFU_R_TR34_12', 'A-96584145 60 scan areas.xlsx': 'ASFU_R_TR34_13', 'A-CYP-15-193 60 scan areas.xlsx': 'ASFU_R_TR46_14', 'A-CYP-15-224 72 scan areas.xlsx': 'ASFU_R_TR46_15', 'A-CYP-15-245 72 scan areas.xlsx': 'ASFU_R_TR46_16', 'A-CYP-15-161 72 scan areas.xlsx': 'ASFU_R_TR46_17', 'A-94647258 60 scan areas.xlsx': 'ASFU_R_TR46_18', 'A-CYP-15-209 72 scan areas.xlsx': 'ASFU_R_TR46_19', 'A-CYP-15-250 72 scan areas.xlsx': 'ASFU_R_TR46_20', 'A-CYP-15-243 72 scan areas.xlsx': 'ASFU_R_TR46_21', 'A-96264824 60 scan areas.xlsx': 'ASFU_R_unknown_22', 'A-94939738 60 scan areas.xlsx': 'ASFU_R_23', 'C-B8441-AR387 96 scan areas.xlsx': 'CDAU_CDC_clade_I', 'C-B11220-AR381 96 scan areas.xlsx': 'CDAU_CDC_clade_II', 'C-MRU224 96 scan areas.xlsx': 'CDAU_clinical_clade_III', 'C-MCC3-10 96 scan areas.xlsx': 'CDAU_clinical_clade_IV', 'C-ML315-AR1037 96 scan areas.xlsx': 'CDAU_CDC_clade_V', 'C-Dhondt 96 scan areas.xlsx': 'CDAU_clinical_1', 'C-Alkandri2 96 scan areas.xlsx': 'CDAU_clinical_2', 'C-Enam 96 scan areas.xlsx': 'CDAU_clinical_3', 'C-Vansteelandt2 96 scan areas.xlsx': 'CDAU_clinical_4', 'C-Klein 72 scan areas.xlsx': 'CDAU_clinical_5', 'C-ATCC-CDAL 96 scan areas.xlsx': 'CDAL_ATCC_90029', 'C-95690277 96 scan areas.xlsx': 'CDDU_clinical', 'C-ATCC-CDTR3 96 scan areas.xlsx': 'CDTR_IQC', 'C-96299088 96 scan areas.xlsx': 'CDTR_clinical', 'C-ATCC-CDPA 96 scan areas.xlsx': 'CDPA_ATCC_22019', 'C-ATCC-CDGL 96 scan areas.xlsx': 'CDGL_ATCC_90030', 'C-94768530-CDGL 96 scan areas.xlsx': 'CDGL_clinical_1', 'C-95738583 96 scan areas.xlsx': 'CDGL_clinical_2', 'C-CDKR-IQC 96 scan areas.xlsx': 'CDKR_ATCC_6258', 'C-94878906-CDKR 96 scan areas.xlsx': 'CDKR_clinical'}
+
+target_dir = os.path.join('/data/leuven/348/vsc34807', f"{path.split('/')[-1]}_new") 
+os.mkdir(target_dir)
+print(f'Target folder made at {target_dir}')
+
+# Iterate over all files in the specified directory
+for filename in os.listdir(path):
+  # Check if the file is an xlsx file
+  if filename.endswith(".xlsx"):
+    # Get the new name for the xlsx file from the dictionary
+    new_name = name_map.get(filename, filename)
+    # Construct the full path for the source and destination files
+    src = os.path.join(path, filename)
+    dst = os.path.join(target_dir, new_name)
+    # Copy the file to the new directory
+    shutil.copy(src, dst)
+
+print("Done!")
+

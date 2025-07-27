@@ -1,0 +1,8 @@
+#!/data/leuven/348/vsc34807/miniconda3/bin/python
+
+import pandas as pd
+
+file = input('file: ')
+
+df = pd.read_excel(file, header=3, usecols='A:M', index_col=0)
+print(df)

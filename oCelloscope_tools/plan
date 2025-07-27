@@ -1,0 +1,35 @@
+
+
+maak nieuwe evaluate function
+
+per parameter, creëer min en max value als 0.01 tot 1
+
+
+
+
+from scipy.optimize import minimize
+
+def objective_function(thresholds):
+    # Calculate individual objective values (negative for EA and CA, positive for VME)
+    ea_value = -calculate_ea(thresholds)
+    ca_value = -calculate_ca(thresholds)
+    vme_value = calculate_vme(thresholds)
+
+    # Combine objectives with weights (you can adjust these weights)
+    combined_objective = 0.5 * ea_value + 0.5 * ca_value + 0.1 * vme_value  # Adjust weights as needed
+
+    return combined_objective
+
+# Define bounds and constraints if any
+bounds = [(min_value, max_value) for _ in range(num_parameters)]  # Set appropriate bounds
+constraints = ({'type': 'eq', 'fun': constraint_function})  # Define constraints if needed
+
+# Initial guess for thresholds (your fixed thresholds)
+initial_guess = [0.5] * num_parameters  # Replace with your actual thresholds
+
+# Run the optimization
+result = minimize(objective_function, initial_guess, bounds=bounds, constraints=constraints)
+
+# The optimal thresholds are in result.x
+optimal_thresholds = result.x
+

@@ -1,0 +1,14 @@
+SLURM_JOB_ID: 55041003
+SLURM_JOB_USER: vsc34807
+SLURM_JOB_ACCOUNT: lp_ea_group
+SLURM_JOB_NAME: a_a
+SLURM_CLUSTER_NAME: (null)
+SLURM_JOB_PARTITION: batch
+SLURM_NNODES: 1
+SLURM_NODELIST: r23i27n06
+SLURM_JOB_CPUS_PER_NODE: 8
+Date: Wed May 10 08:49:08 CEST 2023
+Walltime: 00-12:30:00
+========================================================================
+/var/spool/slurmd/job55041003/slurm_script: line 11: activate: No such file or directory
+/var/spool/slurmd/job55041003/slurm_script: line 13: set_thresh.py: command not found
