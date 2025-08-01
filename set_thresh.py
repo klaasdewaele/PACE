@@ -186,18 +186,19 @@ def calculate_single_configuration_performance(timepoint, antimycotic, parameter
     for file in files_with_data:
         try:
             # Get the MIC distance and categorical errors for this file
-            distance = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['distance']
-            VME = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['VME']
-            ME = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['ME']
-            ATU_VME = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['ATU_VME']
-            ATU_ME = di[antimycotic][file]['predicted_MIC'][parameter][timepoint][threshold]['ATU_ME']
+            # Based on predict.py, the data is stored under 'MIC' not 'predicted_MIC'
+            distance = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['MIC_distance']
+            VME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['VME']
+            ME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ME']
+            ATU_VME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ATU_VME']
+            ATU_ME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ATU_ME']
             
             # Sum up the metrics across all files
-            di[antimycotic][timepoint][parameter][threshold][0] += distance  # total_MIC_distance
-            di[antimycotic][timepoint][parameter][threshold][1] += VME       # VME_count
-            di[antimycotic][timepoint][parameter][threshold][2] += ME        # ME_count  
-            di[antimycotic][timepoint][parameter][threshold][3] += ATU_VME   # ATU_VME_count
-            di[antimycotic][timepoint][parameter][threshold][4] += ATU_ME    # ATU_ME_count
+            di[antimycotic][timepoint][parameter][threshold][0] += abs(distance) if not np.isnan(distance) else 12  # total_MIC_distance
+            di[antimycotic][timepoint][parameter][threshold][1] += VME if not np.isnan(VME) else 0       # VME_count
+            di[antimycotic][timepoint][parameter][threshold][2] += ME if not np.isnan(ME) else 0        # ME_count  
+            di[antimycotic][timepoint][parameter][threshold][3] += ATU_VME if not np.isnan(ATU_VME) else 0   # ATU_VME_count
+            di[antimycotic][timepoint][parameter][threshold][4] += ATU_ME if not np.isnan(ATU_ME) else 0    # ATU_ME_count
             
         except KeyError as e:
             logging.debug(f'No prediction data for file {file}: {e}')
@@ -282,8 +283,16 @@ else:
     criteria = [('EA', 'total_MIC_distance'), ('CA', 'min_errors_weighted')] 
     criteria_label = f'{criteria[0][1]}-{criteria[1][1]}'
 
+# Check if this is likely a single configuration run (single parameter, single threshold, single bias)
+is_likely_single_config = (args.p and len(ast.literal_eval(args.p)) == 1 and 
+                          args.s and not isinstance(ast.literal_eval(args.s), list) and
+                          args.m and not isinstance(ast.literal_eval(args.m), list))
+
 # Create label for naming output directory and log file
-label = f"{str(args.g)}_{str(args.a)}_{criteria_label}_time_{start}{end_label}_bias_{str(args.m)}_{str(args.n)}"
+if is_likely_single_config:
+    label = f"{str(args.g)}_{str(args.a)}_single_config_time_{start}{end_label}_bias_{str(args.m)}_{str(args.n)}"
+else:
+    label = f"{str(args.g)}_{str(args.a)}_{criteria_label}_time_{start}{end_label}_bias_{str(args.m)}_{str(args.n)}"
 
 # Set-up output directory
 output_dir, session_time  = setup.output_setup(str(args.o), home, label)
