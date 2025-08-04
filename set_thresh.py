@@ -201,10 +201,15 @@ def calculate_single_configuration_performance(timepoint, antimycotic, parameter
             di[antimycotic][timepoint][parameter][threshold][4] += ATU_ME if not np.isnan(ATU_ME) else 0    # ATU_ME_count
             
         except KeyError as e:
-            logging.debug(f'No prediction data for file {file}: {e}')
-            # If no prediction data, treat as a major error (distance = 12 is used for failed predictions)
-            di[antimycotic][timepoint][parameter][threshold][0] += 12
-            di[antimycotic][timepoint][parameter][threshold][2] += 1  # Count as ME
+            # Check if it's missing prediction data vs structural issues
+            if 'MIC' not in di[antimycotic][file]:
+                logging.error(f'File {file} missing MIC data structure: {e}')
+                continue  # Skip this file entirely
+            elif parameter not in di[antimycotic][file]['MIC']:
+                logging.warning(f'File {file} missing parameter {parameter}: {e}')
+                continue  # Skip this parameter for this file
+            else:
+                logging.debug(f'No prediction data for file {file}: {e}')
     
     # Now calculate performance metrics directly using the existing evaluation function
     agreement_dict = evaluate.get_agreement_parameters_ext(antimycotic, timepoint, parameter, threshold, di, files_with_data, files_with_breakpoint)

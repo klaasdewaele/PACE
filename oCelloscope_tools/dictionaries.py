@@ -21,7 +21,8 @@ MIC_well_number <= breakpoint_list[1]:             ref_cat = 'R'
 # note: vorico MIC for A. fumigatus >1 mg/mL is considered resistant, but MIC 2 mg/mL is still considered ATU: both categories are overlapping 
 # as it is encoded here, 2 mg/mL is in a separate category from R, unlike EUCAST - however ATU_VME (predicted S instead of ATU) can be penalized as VME while defining thresholds, therefore considering it as R
 
-breakpoint_dict_C = {
+# OBSOLETE - updated with EUCAST V11 TABLES 4 AUG 2025
+breakpoint_dict_C_legacy_MICs = {
 'A_CDAL': [1, 2], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [0.06, 0.5], 'D_CDAL': [0.06, 0.12], 'E_CDAL': [0.03, 0.06], 'F_CDAL': [0.06, 0.12], 'G_CDAL': [2, 8], 'H_CDAL': [0.016, 0.064],
 'A_CDDU': [1, 2], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [0.06, 0.5], 'D_CDDU': [0.06, 0.12], 'E_CDDU': [np.NaN, np.NaN], 'F_CDDU': [0.06, 0.12], 'G_CDDU': [2, 8], 'H_CDDU': [np.NaN, np.NaN],
 'A_CDGL': [1, 2], 'B_CDGL': [np.NaN, np.NaN], 'C_CDGL': [np.NaN, np.NaN], 'D_CDGL': [np.NaN, np.NaN], 'E_CDGL': [0.06, 0.12], 'F_CDGL': [np.NaN, np.NaN], 'G_CDGL': [0.001, 32], 'H_CDGL': [0.03, 0.06],
@@ -31,7 +32,8 @@ breakpoint_dict_C = {
 'A_CDAU': [1, 2], 'B_CDAU': [np.NaN, np.NaN], 'C_CDAU': [np.NaN, np.NaN], 'D_CDAU': [np.NaN, np.NaN], 'E_CDAU': [2, 4], 'F_CDAU': [np.NaN, np.NaN], 'G_CDAU': [16, 32], 'H_CDAU': [np.NaN, np.NaN],
 'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [2, 8], 'H_other': [np.NaN, np.NaN]}
 
-breakpoint_dict_C = {
+# OBSOLETE - updated with EUCAST V11 TABLES 4 AUG 2025
+breakpoint_dict_C_legacy = {
 'A_CDAL': [4, 3], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [8, 5], 'D_CDAL': [8, 7], 'E_CDAL': [9, 8], 'F_CDAL': [8, 7], 'G_CDAL': [7, 5], 'H_CDAL': [10, 8],
 'A_CDDU': [4, 3], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [8, 5], 'D_CDDU': [8, 7], 'E_CDDU': [np.NaN, np.NaN], 'F_CDDU': [8, 7], 'G_CDDU': [7, 5], 'H_CDDU': [np.NaN, np.NaN],
 'A_CDGL': [4, 3], 'B_CDGL': [np.NaN, np.NaN], 'C_CDGL': [np.NaN, np.NaN], 'D_CDGL': [np.NaN, np.NaN], 'E_CDGL': [8, 7], 'F_CDGL': [np.NaN, np.NaN], 'G_CDGL': [11, 3], 'H_CDGL': [9, 8],
@@ -41,7 +43,31 @@ breakpoint_dict_C = {
 'A_CDAU': [4, 3], 'B_CDAU': [np.NaN, np.NaN], 'C_CDAU': [np.NaN, np.NaN], 'D_CDAU': [np.NaN, np.NaN], 'E_CDAU': [3, 2], 'F_CDAU': [np.NaN, np.NaN], 'G_CDAU': [4, 3], 'H_CDAU': [np.NaN, np.NaN],
 'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [7, 5], 'H_other': [np.NaN, np.NaN]}
 
-#Nieuwe inzichten 2 juni: aspergillus, neem voor alles fotometrische waardes (algoritme 1 dat Eagle negeert), maar met amfo B correctie. Verwijder amfo B waarde van ASFU_R_TR34_1
+
+# Updated with EUCAST V11 TABLES 4 AUG 2025 + tentative CDC breakpoint for micafungin added (amfo B, fluco and anidula were already in)
+breakpoint_dict_C_updated_MICs = {
+'A_CDAL': [1, 2], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [0.06, 0.5], 'D_CDAL': [0.06, 0.12], 'E_CDAL': [0.016, 0.03], 'F_CDAL': [0.06, 0.12], 'G_CDAL': [2, 8], 'H_CDAL': [0.03, 0.06],
+'A_CDDU': [1, 2], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [0.06, 0.5], 'D_CDDU': [0.06, 0.12], 'E_CDDU': [0.03, 0.06], 'F_CDDU': [0.06, 0.12], 'G_CDDU': [2, 8], 'H_CDDU': [0.06, 0.12],
+'A_CDGL': [1, 2], 'B_CDGL': [np.NaN, np.NaN], 'C_CDGL': [np.NaN, np.NaN], 'D_CDGL': [np.NaN, np.NaN], 'E_CDGL': [0.06, 0.12], 'F_CDGL': [np.NaN, np.NaN], 'G_CDGL': [0.001, 32], 'H_CDGL': [0.03, 0.06],
+'A_CDKR': [1, 2], 'B_CDKR': [np.NaN, np.NaN], 'C_CDKR': [np.NaN, np.NaN], 'D_CDKR': [np.NaN, np.NaN], 'E_CDKR': [0.06, 0.12], 'F_CDKR': [np.NaN, np.NaN], 'G_CDKR': [np.NaN, np.NaN], 'H_CDKR': [np.NaN, np.NaN],
+'A_CDPA': [1, 2], 'B_CDPA': [np.NaN, np.NaN], 'C_CDPA': [0.125, 0.5], 'D_CDPA': [0.06, 0.12], 'E_CDPA': [4, 8], 'F_CDPA': [0.125, 0.25], 'G_CDPA': [2, 8], 'H_CDPA': [4, 8],
+'A_CDTR': [1, 2], 'B_CDTR': [np.NaN, np.NaN], 'C_CDTR': [0.125, 0.5], 'D_CDTR': [0.06, 0.12], 'E_CDTR': [0.06, 0.12], 'F_CDTR': [0.125, 0.25], 'G_CDTR': [2, 8], 'H_CDTR': [0.06, 0.12],
+'A_CDAU': [1, 2], 'B_CDAU': [np.NaN, np.NaN], 'C_CDAU': [np.NaN, np.NaN], 'D_CDAU': [np.NaN, np.NaN], 'E_CDAU': [2, 4], 'F_CDAU': [np.NaN, np.NaN], 'G_CDAU': [16, 32], 'H_CDAU': [2, 4],
+'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [2, 8], 'H_other': [np.NaN, np.NaN]}
+
+antimycotics_dict_C = {'A': 'amphotericin B', 'B': '5-flucytosine', 'C': 'voriconazole', 'D': 'posaconazole', 'E': 'anidulafungin', 'F': 'itraconazole', 'G': 'fluconazole', 'H': 'micafungin'}
+
+breakpoint_dict_C = {
+'A_CDAL': [4, 3], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [8, 5], 'D_CDAL': [8, 7], 'E_CDAL': [10, 9], 'F_CDAL': [8, 7], 'G_CDAL': [7, 5], 'H_CDAL': [9, 8],
+'A_CDDU': [4, 3], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [8, 5], 'D_CDDU': [8, 7], 'E_CDDU': [9, 8], 'F_CDDU': [8, 7], 'G_CDDU': [7, 5], 'H_CDDU': [8, 7],
+'A_CDGL': [4, 3], 'B_CDGL': [np.NaN, np.NaN], 'C_CDGL': [np.NaN, np.NaN], 'D_CDGL': [np.NaN, np.NaN], 'E_CDGL': [8, 7], 'F_CDGL': [np.NaN, np.NaN], 'G_CDGL': [11, 3], 'H_CDGL': [9, 8],
+'A_CDKR': [4, 3], 'B_CDKR': [np.NaN, np.NaN], 'C_CDKR': [np.NaN, np.NaN], 'D_CDKR': [np.NaN, np.NaN], 'E_CDKR': [8, 7], 'F_CDKR': [np.NaN, np.NaN], 'G_CDKR': [np.NaN, np.NaN], 'H_CDKR': [np.NaN, np.NaN],
+'A_CDPA': [4, 3], 'B_CDPA': [np.NaN, np.NaN], 'C_CDPA': [7, 5], 'D_CDPA': [8, 7], 'E_CDPA': [2, 1], 'F_CDPA': [7, 6], 'G_CDPA': [7, 5], 'H_CDPA': [2, 1],
+'A_CDTR': [4, 3], 'B_CDTR': [np.NaN, np.NaN], 'C_CDTR': [7, 5], 'D_CDTR': [8, 7], 'E_CDTR': [8, 7], 'F_CDTR': [7, 6], 'G_CDTR': [7, 5], 'H_CDTR': [8, 7],
+'A_CDAU': [4, 3], 'B_CDAU': [np.NaN, np.NaN], 'C_CDAU': [np.NaN, np.NaN], 'D_CDAU': [np.NaN, np.NaN], 'E_CDAU': [3, 2], 'F_CDAU': [np.NaN, np.NaN], 'G_CDAU': [4, 3], 'H_CDAU': [3, 2],
+'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [7, 5], 'H_other': [np.NaN, np.NaN]}
+
+#Nieuwe inzichten 2  juni: aspergillus, neem voor alles fotometrische waardes (algoritme 1 dat Eagle negeert), maar met amfo B correctie. Verwijder amfo B waarde van ASFU_R_TR34_1
 # Schrap twee stalen: ASFU_S_8, ASFU_R_23
 
 MIC_dict_A = {'ASFU_ATCC_204305_S': {'A': 'A6',
