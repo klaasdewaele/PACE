@@ -45,7 +45,7 @@ breakpoint_dict_C_legacy = {
 
 
 # Updated with EUCAST V11 TABLES 4 AUG 2025 + tentative CDC breakpoint for micafungin added (amfo B, fluco and anidula were already in)
-breakpoint_dict_C_updated_MICs = {
+breakpoint_dict_C_MICs = {
 'A_CDAL': [1, 2], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [0.06, 0.5], 'D_CDAL': [0.06, 0.12], 'E_CDAL': [0.016, 0.03], 'F_CDAL': [0.06, 0.12], 'G_CDAL': [2, 8], 'H_CDAL': [0.03, 0.06],
 'A_CDDU': [1, 2], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [0.06, 0.5], 'D_CDDU': [0.06, 0.12], 'E_CDDU': [0.03, 0.06], 'F_CDDU': [0.06, 0.12], 'G_CDDU': [2, 8], 'H_CDDU': [0.06, 0.12],
 'A_CDGL': [1, 2], 'B_CDGL': [np.NaN, np.NaN], 'C_CDGL': [np.NaN, np.NaN], 'D_CDGL': [np.NaN, np.NaN], 'E_CDGL': [0.06, 0.12], 'F_CDGL': [np.NaN, np.NaN], 'G_CDGL': [0.001, 32], 'H_CDGL': [0.03, 0.06],
@@ -54,8 +54,6 @@ breakpoint_dict_C_updated_MICs = {
 'A_CDTR': [1, 2], 'B_CDTR': [np.NaN, np.NaN], 'C_CDTR': [0.125, 0.5], 'D_CDTR': [0.06, 0.12], 'E_CDTR': [0.06, 0.12], 'F_CDTR': [0.125, 0.25], 'G_CDTR': [2, 8], 'H_CDTR': [0.06, 0.12],
 'A_CDAU': [1, 2], 'B_CDAU': [np.NaN, np.NaN], 'C_CDAU': [np.NaN, np.NaN], 'D_CDAU': [np.NaN, np.NaN], 'E_CDAU': [2, 4], 'F_CDAU': [np.NaN, np.NaN], 'G_CDAU': [16, 32], 'H_CDAU': [2, 4],
 'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [2, 8], 'H_other': [np.NaN, np.NaN]}
-
-antimycotics_dict_C = {'A': 'amphotericin B', 'B': '5-flucytosine', 'C': 'voriconazole', 'D': 'posaconazole', 'E': 'anidulafungin', 'F': 'itraconazole', 'G': 'fluconazole', 'H': 'micafungin'}
 
 breakpoint_dict_C = {
 'A_CDAL': [4, 3], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [8, 5], 'D_CDAL': [8, 7], 'E_CDAL': [10, 9], 'F_CDAL': [8, 7], 'G_CDAL': [7, 5], 'H_CDAL': [9, 8],
