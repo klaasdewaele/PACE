@@ -635,6 +635,9 @@ for timepoint in timepoints:
         # Add training status
         performance_per_timepoint['training'] = training
 
+        # Check if this is a single configuration scenario - skip bias correction entirely
+        is_single_config = is_single_configuration(parameters_to_predict, thresholds, timepoint, antimycotic, sec_bias_corr)
+
         # The path to the new di and output_dir are entries in the dictionary
         if args.rerun == 'bias': # 'bias' flag set in case of rerun of pipeline for bias correction - finish_rerun() to prevent endless bias correction
             # finish_rerun writes performance_per_timepoint to parent script and does sys.flush() and sys.exit()
@@ -643,6 +646,25 @@ for timepoint in timepoints:
             # When this clause? For 'test' runs while bagging: bagging True and training False: prevent bias correction and nested bagging 
             logging.info(f'--- --- --- Non-training run: no bias correction.')
             finish_rerun(args.rerun, performance_per_timepoint)
+        elif is_single_config:
+            # Single configuration: user specified exact parameter, threshold, and bias - no additional bias correction needed
+            logging.info(f'--- --- --- Single configuration detected: skipping bias correction (user specified exact bias: {bias})')
+            performance_per_timepoint['phase'] = 'single_config_no_bias_corr'
+            performance_chron.append(performance_per_timepoint)
+
+            # Set up variables for plotting (no bias correction means we use original di and output_dir)
+            di_plot = di
+            output_dir_rerun = output_dir
+
+            # Create highlight structure for plotting (same as optimization path)
+            highlight = {} 
+            for file, distance in performance_per_timepoint['dist_per_file'].items(): 
+                highlight[file] = {} # highlight[file][parameter][threshold]
+                highlight[file][performance_per_timepoint['parameter']] = {}
+                highlight[file][performance_per_timepoint['parameter']][performance_per_timepoint['threshold']] = distance
+
+            beautiful_dict = pprint.pformat(performance_per_timepoint)
+            logging.info(f'--- --- --- Single configuration performance (no bias correction): \n\n {beautiful_dict}\n')
         #elif criterium == "total_MIC_distance": # Only in case of minimizing total_MIC_distance, do bias correction - not for min_weighted_errors
         else: # removed requirement of min_distance criterium: what is rationale behind this? Also, this would not work when using "CA_0.90" optimization.
         # If setting threshold, detect systematic error: average MIC distances across files of best threshold: if different from 0, skip plotting, and rerun pipeline with bias correction
