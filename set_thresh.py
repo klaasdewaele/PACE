@@ -186,30 +186,28 @@ def calculate_single_configuration_performance(timepoint, antimycotic, parameter
     for file in files_with_data:
         try:
             # Get the MIC distance and categorical errors for this file
-            # Based on predict.py, the data is stored under 'MIC' not 'predicted_MIC'
+            # Based on predict.py, the data is stored under 'MIC'
             distance = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['MIC_distance']
             VME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['VME']
             ME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ME']
             ATU_VME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ATU_VME']
             ATU_ME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ATU_ME']
             
-            # Sum up the metrics across all files
-            di[antimycotic][timepoint][parameter][threshold][0] += abs(distance) if not np.isnan(distance) else 12  # total_MIC_distance
-            di[antimycotic][timepoint][parameter][threshold][1] += VME if not np.isnan(VME) else 0       # VME_count
-            di[antimycotic][timepoint][parameter][threshold][2] += ME if not np.isnan(ME) else 0        # ME_count  
-            di[antimycotic][timepoint][parameter][threshold][3] += ATU_VME if not np.isnan(ATU_VME) else 0   # ATU_VME_count
-            di[antimycotic][timepoint][parameter][threshold][4] += ATU_ME if not np.isnan(ATU_ME) else 0    # ATU_ME_count
-            
+            # Sum up the metrics across all files (matching evaluate.py line 169-175)
+            di[antimycotic][timepoint][parameter][threshold][0] += abs(distance) if not np.isnan(distance) else 0  # total_MIC_distance
+            if file in files_with_breakpoint:
+                # if no breakpoint, these values remain 0
+                di[antimycotic][timepoint][parameter][threshold][1] += VME if not np.isnan(VME) else 0       # VME_count
+                di[antimycotic][timepoint][parameter][threshold][2] += ME if not np.isnan(ME) else 0        # ME_count  
+                di[antimycotic][timepoint][parameter][threshold][3] += ATU_VME if not np.isnan(ATU_VME) else 0   # ATU_VME_count
+                di[antimycotic][timepoint][parameter][threshold][4] += ATU_ME if not np.isnan(ATU_ME) else 0    # ATU_ME_count
+                
         except KeyError as e:
-            # Check if it's missing prediction data vs structural issues
-            if 'MIC' not in di[antimycotic][file]:
-                logging.error(f'File {file} missing MIC data structure: {e}')
-                continue  # Skip this file entirely
-            elif parameter not in di[antimycotic][file]['MIC']:
-                logging.warning(f'File {file} missing parameter {parameter}: {e}')
-                continue  # Skip this parameter for this file
-            else:
-                logging.debug(f'No prediction data for file {file}: {e}')
+            logging.debug(f'No prediction data for file {file}: {e}')
+            # If no prediction data, treat as a major error (distance = 12 is used for failed predictions)
+            di[antimycotic][timepoint][parameter][threshold][0] += 12
+            if file in files_with_breakpoint:
+                di[antimycotic][timepoint][parameter][threshold][2] += 1  # Count as ME
     
     # Now calculate performance metrics directly using the existing evaluation function
     agreement_dict = evaluate.get_agreement_parameters_ext(antimycotic, timepoint, parameter, threshold, di, files_with_data, files_with_breakpoint)
@@ -233,14 +231,12 @@ def calculate_single_configuration_performance(timepoint, antimycotic, parameter
     for key, value in agreement_dict.items():
         performance_per_timepoint[key] = value
     
-    # Calculate total_errors (sum of weighted categorical errors)
-    performance_per_timepoint['total_errors'] = agreement_dict.get('min_errors_weighted', 0)
-    
-    # Add dist_per_file for bias correction compatibility (even though single config doesn't need it)
+    # Map 'distance_per_file' to 'dist_per_file' for consistency with optimization path
+    # (get_agreement_parameters_ext returns 'distance_per_file', but rest of code expects 'dist_per_file')
     performance_per_timepoint['dist_per_file'] = agreement_dict.get('distance_per_file', {})
     
-    # Add 'c' field for plotting compatibility - use 'single_config' to identify these results
-    performance_per_timepoint['c'] = 'single_config_EA_CA'
+    # Calculate total_errors (sum of weighted categorical errors)
+    performance_per_timepoint['total_errors'] = agreement_dict.get('min_errors_weighted', 0)
     
     logging.info(f'--- --- Single configuration performance: EA={agreement_dict.get("EA", "N/A"):.3f}, CA={agreement_dict.get("CA", "N/A"):.3f}, Total errors={performance_per_timepoint["total_errors"]}')
     
@@ -288,16 +284,8 @@ else:
     criteria = [('EA', 'total_MIC_distance'), ('CA', 'min_errors_weighted')] 
     criteria_label = f'{criteria[0][1]}-{criteria[1][1]}'
 
-# Check if this is likely a single configuration run (single parameter, single threshold, single bias)
-is_likely_single_config = (args.p and len(ast.literal_eval(args.p)) == 1 and 
-                          args.s and not isinstance(ast.literal_eval(args.s), list) and
-                          args.m and not isinstance(ast.literal_eval(args.m), list))
-
 # Create label for naming output directory and log file
-if is_likely_single_config:
-    label = f"{str(args.g)}_{str(args.a)}_single_config_time_{start}{end_label}_bias_{str(args.m)}_{str(args.n)}"
-else:
-    label = f"{str(args.g)}_{str(args.a)}_{criteria_label}_time_{start}{end_label}_bias_{str(args.m)}_{str(args.n)}"
+label = f"{str(args.g)}_{str(args.a)}_{criteria_label}_time_{start}{end_label}_bias_{str(args.m)}_{str(args.n)}"
 
 # Set-up output directory
 output_dir, session_time  = setup.output_setup(str(args.o), home, label)
@@ -647,9 +635,6 @@ for timepoint in timepoints:
         # Add training status
         performance_per_timepoint['training'] = training
 
-        # Check if this is a single configuration scenario - skip bias correction entirely
-        is_single_config = is_single_configuration(parameters_to_predict, thresholds, timepoint, antimycotic, sec_bias_corr)
-
         # The path to the new di and output_dir are entries in the dictionary
         if args.rerun == 'bias': # 'bias' flag set in case of rerun of pipeline for bias correction - finish_rerun() to prevent endless bias correction
             # finish_rerun writes performance_per_timepoint to parent script and does sys.flush() and sys.exit()
@@ -658,28 +643,9 @@ for timepoint in timepoints:
             # When this clause? For 'test' runs while bagging: bagging True and training False: prevent bias correction and nested bagging 
             logging.info(f'--- --- --- Non-training run: no bias correction.')
             finish_rerun(args.rerun, performance_per_timepoint)
-        elif is_single_config:
-            # Single configuration: user specified exact parameter, threshold, and bias - no additional bias correction needed
-            logging.info(f'--- --- --- Single configuration detected: skipping bias correction (user specified exact bias: {bias})')
-            performance_per_timepoint['phase'] = 'single_config_no_bias_corr'
-            performance_chron.append(performance_per_timepoint)
-            
-            # Set up variables for plotting (no bias correction means we use original di and output_dir)
-            di_plot = di
-            output_dir_rerun = output_dir
-            
-            # Create highlight structure for plotting (same as optimization path)
-            highlight = {} 
-            for file, distance in performance_per_timepoint['dist_per_file'].items(): 
-                highlight[file] = {} # highlight[file][parameter][threshold]
-                highlight[file][performance_per_timepoint['parameter']] = {}
-                highlight[file][performance_per_timepoint['parameter']][performance_per_timepoint['threshold']] = distance
-            
-            beautiful_dict = pprint.pformat(performance_per_timepoint)
-            logging.info(f'--- --- --- Single configuration performance (no bias correction): \n\n {beautiful_dict}\n')
         #elif criterium == "total_MIC_distance": # Only in case of minimizing total_MIC_distance, do bias correction - not for min_weighted_errors
         else: # removed requirement of min_distance criterium: what is rationale behind this? Also, this would not work when using "CA_0.90" optimization.
-            # If setting threshold, detect systematic error: average MIC distances across files of best threshold: if different from 0, skip plotting, and rerun pipeline with bias correction
+        # If setting threshold, detect systematic error: average MIC distances across files of best threshold: if different from 0, skip plotting, and rerun pipeline with bias correction
             dist_per_file = performance_per_timepoint['dist_per_file']
             # calculate median
             average = int(round(statistics.median(dist_per_file.values()), 0))
@@ -694,7 +660,7 @@ for timepoint in timepoints:
             performance_per_timepoint['phase'] = 'pre_bias_corr'
             performance_chron.append(performance_per_timepoint)
 
-
+            
             if isinstance(sec_bias_corr, list):
                 # Initialize based on whether we want to minimize or maximize the criterion
                 if criterium in ['EA', 'CA']:
@@ -771,29 +737,30 @@ for timepoint in timepoints:
                 performance_per_timepoint, output_dir_rerun, di_plot = pipeline_rerun(args=args, b=f'({cycles}, {bootstrap_size}, {None})', rerun='bagging', c=[(EA_CA, criterium)], t=f'({timepoint}, {timepoint + 1}, 2)', o=output_dir)
                 # Still to remove files used in training: f'\"{performance_per_timepoint['dist_per_file'].keys()}\"'
                 performance_chron.append(performance_per_timepoint)                 
-    
-            # For optimization path only: create highlight structure for plotting
-            if not is_single_config:
-                highlight = {} 
-                for file, distance in performance_per_timepoint['dist_per_file'].items(): 
-                    highlight[file] = {} # highlight[file][parameter][threshold]
-                    highlight[file][performance_per_timepoint['parameter']] = {}
-                    highlight[file][performance_per_timepoint['parameter']][performance_per_timepoint['threshold']] = distance
 
-        # Final performance logging and saving (for both single config and optimization paths)
-        beautiful_dict = pprint.pformat(performance_per_timepoint)
-        logging.info(f'--- --- --- Final performance_per_timepoint dict: \n\n {beautiful_dict}\n')
+            # highlight has (here redundant) structure with par and threshold, but this is needed for plotting specific thresholds from within predict() 
+            highlight = {} 
+            for file, distance in performance_per_timepoint['dist_per_file'].items(): 
+                highlight[file] = {} # highlight[file][parameter][threshold]
+                highlight[file][performance_per_timepoint['parameter']] = {}
+                highlight[file][performance_per_timepoint['parameter']][performance_per_timepoint['threshold']] = distance
+                
+            #plot.plot(output_path=output_dir, d=d, di=di_plot, params=[performance_per_timepoint['parameter']], am=[antimycotic], files=files_with_data, 
+            #         timeframe=((20000, 90000)), criterium=criterium, thresh_dict = thresh_dict,# timepoint - 0.2 * timepoint, timepoint + 0.2 * timepoint
+            #         well_legend=ref_wells, thresh_y=performance_per_timepoint['threshold'], timepoint=timepoint, highlight=highlight,
+            #        label=performance_per_timepoint, y_lim = threshold_dict)
+            
 
-        performance_chron_df = pd.DataFrame(performance_chron)
-        performance_chron_df.to_pickle(os.path.join(output_dir, f'performance_{label}.pkl'))  
-        performance_chron_df.to_pickle(os.path.join(copy_path, f'performance_{label}_{session_time}.pkl'))  
-        logging.info(f'Saved performance dataframe.')
+            beautiful_dict = pprint.pformat(performance_per_timepoint)
+            logging.info(f'--- --- --- Best performance_per_timepoint dict: \n\n {beautiful_dict}\n')
 
-        # Clean up temporary files after processing complete
-        if 'output_dir_rerun' in locals():
+            performance_chron_df = pd.DataFrame(performance_chron)
+            performance_chron_df.to_pickle(os.path.join(output_dir, f'performance_{label}.pkl'))  
+            performance_chron_df.to_pickle(os.path.join(copy_path, f'performance_{label}_{session_time}.pkl'))  
+            logging.info(f'Saved performance dataframe.')
+
+            # Clean up temporary files after bias correction cycles complete
             cleanup_temporary_pkl_files(output_dir_rerun, timepoint, antimycotic)
-        else:
-            cleanup_temporary_pkl_files(output_dir, timepoint, antimycotic)
 
     # Clean up remaining temporary files after timepoint completes
     logging.info(f'Timepoint {timepoint} completed. Cleaning up remaining temporary files.')
