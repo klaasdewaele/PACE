@@ -773,16 +773,19 @@ for timepoint in timepoints:
             #        label=performance_per_timepoint, y_lim = threshold_dict)
             
 
-            beautiful_dict = pprint.pformat(performance_per_timepoint)
-            logging.info(f'--- --- --- Best performance_per_timepoint dict: \n\n {beautiful_dict}\n')
+        beautiful_dict = pprint.pformat(performance_per_timepoint)
+        logging.info(f'--- --- --- Best performance_per_timepoint dict: \n\n {beautiful_dict}\n')
 
-            performance_chron_df = pd.DataFrame(performance_chron)
-            performance_chron_df.to_pickle(os.path.join(output_dir, f'performance_{label}.pkl'))  
-            performance_chron_df.to_pickle(os.path.join(copy_path, f'performance_{label}_{session_time}.pkl'))  
-            logging.info(f'Saved performance dataframe.')
+        performance_chron_df = pd.DataFrame(performance_chron)
+        performance_chron_df.to_pickle(os.path.join(output_dir, f'performance_{label}.pkl'))  
+        performance_chron_df.to_pickle(os.path.join(copy_path, f'performance_{label}_{session_time}.pkl'))  
+        logging.info(f'Saved performance dataframe.')
 
-            # Clean up temporary files after bias correction cycles complete
+        # Clean up temporary files after bias correction cycles complete
+        if 'output_dir_rerun' in locals():
             cleanup_temporary_pkl_files(output_dir_rerun, timepoint, antimycotic)
+        else:
+            cleanup_temporary_pkl_files(output_dir, timepoint, antimycotic)
 
     # Clean up remaining temporary files after timepoint completes
     logging.info(f'Timepoint {timepoint} completed. Cleaning up remaining temporary files.')
