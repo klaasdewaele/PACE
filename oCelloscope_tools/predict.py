@@ -34,15 +34,20 @@ def determine_CA(file, distance, antimycotic, MIC_dict, breakpoint_dict, species
         logging.debug(f'--- --- --- --- pred_well_number {pred_well_number}; breakpoint_dict {antimycotic}_{species_dict[file]}')
         logging.debug(f'--- --- --- --- --- pred_cat: {pred_cat}')
 
-        MIC_well_number = int(MIC_dict[file][antimycotic][1:])
-        if np.isnan(breakpoint_list[0]): 
-            ref_cat = np.NaN
-        elif MIC_well_number >= breakpoint_list[0]: 
-            ref_cat = 'S'
-        elif MIC_well_number <= breakpoint_list[1]: 
-            ref_cat = 'R'
-        else: 
-            ref_cat = 'ATU'
+        # Check if MIC starts with Z, if so, set ref_cat to np.NaN
+        if MIC_dict[file][antimycotic].startswith('Z'):
+             ref_cat = np.NaN
+             MIC_well_number = np.NaN
+        else:
+            MIC_well_number = int(MIC_dict[file][antimycotic][1:])
+            if np.isnan(breakpoint_list[0]): 
+                ref_cat = np.NaN
+            elif MIC_well_number >= breakpoint_list[0]: 
+                ref_cat = 'S'
+            elif MIC_well_number <= breakpoint_list[1]: 
+                ref_cat = 'R'
+            else: 
+                ref_cat = 'ATU'
         logging.debug(f'--- --- --- --- MIC_well_number {MIC_well_number}; breakpoint_dict {antimycotic}_{species_dict[file]}')
         logging.debug(f'--- --- --- --- --- pred_cat {pred_cat}, ref_cat: {ref_cat}')
         if (pred_cat == 'R') and (ref_cat == 'S'): 
