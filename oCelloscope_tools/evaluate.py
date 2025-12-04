@@ -169,10 +169,16 @@ def get_best_thresholds_bis(timepoint, antimycotic, parameters, di, thresholds, 
                 di[antimycotic][timepoint][parameter][threshold][0] += abs(di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['MIC_distance'])
                 if file in files_with_breakpoint:
                     # if no breakpoint, these values remain 0
-                    di[antimycotic][timepoint][parameter][threshold][1] += (di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['VME'])
-                    di[antimycotic][timepoint][parameter][threshold][2] += (di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ME'])
-                    di[antimycotic][timepoint][parameter][threshold][3] += (di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ATU_VME'])
-                    di[antimycotic][timepoint][parameter][threshold][4] += (di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ATU_ME'])                   
+                    # Fix: check for NaN before adding, as Z-prefixed MICs result in NaN errors
+                    val_VME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['VME']
+                    val_ME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ME']
+                    val_ATU_VME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ATU_VME']
+                    val_ATU_ME = di[antimycotic][file]['MIC'][parameter][timepoint][threshold]['ATU_ME']
+
+                    di[antimycotic][timepoint][parameter][threshold][1] += val_VME if not np.isnan(val_VME) else 0
+                    di[antimycotic][timepoint][parameter][threshold][2] += val_ME if not np.isnan(val_ME) else 0
+                    di[antimycotic][timepoint][parameter][threshold][3] += val_ATU_VME if not np.isnan(val_ATU_VME) else 0
+                    di[antimycotic][timepoint][parameter][threshold][4] += val_ATU_ME if not np.isnan(val_ATU_ME) else 0                   
             
             # if approach 2 or 3: slower approaches that involve calculation of all performance metrics for each threshold
             if type(criterium) == float or criterium == "EA" or criterium == "CA": 

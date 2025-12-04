@@ -670,7 +670,11 @@ for timepoint in timepoints:
         # If setting threshold, detect systematic error: average MIC distances across files of best threshold: if different from 0, skip plotting, and rerun pipeline with bias correction
             dist_per_file = performance_per_timepoint['dist_per_file']
             # calculate median
-            average = int(round(statistics.median(dist_per_file.values()), 0))
+            if not dist_per_file:
+                logging.warning(f'No distance data available for {antimycotic} at timepoint {timepoint} - skipping bias correction')
+                average = 0
+            else:
+                average = int(round(statistics.median(dist_per_file.values()), 0))
             #total = 0
             #for file, distance in dist_per_file.items():
                 #total += distance
