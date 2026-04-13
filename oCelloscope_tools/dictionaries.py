@@ -4,12 +4,125 @@ antimycotics_dict_A = {'A': 'amphotericin B', 'B': 'voriconazole', 'C': 'posacon
 antimycotics_dict_C = {'A': 'amphotericin B', 'B': '5-flucytosine', 'C': 'voriconazole', 'D': 'posaconazole', 'E': 'anidulafungin', 'F': 'itraconazole', 'G': 'fluconazole', 'H': 'micafungin'}
 
 # EUCAST dictionaries: threshold for growth inhibition compared to growth control
-eucast_A_old = {'A': 0.05, 'B': 0.05, 'C': 0.05, 'D': 0.05, 'E': 0.05, 'F': 0.05}
 eucast_A = {'A': 0.10, 'B': 0.10, 'C': 0.10, 'D': 0.10, 'E': 0.10, 'F': 0.10}
 eucast_C = {'A': 0.10, 'B': 0.5, 'C': 0.5, 'D': 0.5, 'E': 0.5, 'F': 0.5, 'G': 0.5, 'H': 0.5}
 
+# Update breakpoint tables V12 
+breakpoint_dict_A = {
+    'A_ASFU': [5, 4],  # Amphotericin B (unchanged)
+
+    # Voriconazole: S ≤1, R ≥2
+    'B_ASFU': [5, 4],
+
+    # Posaconazole: S ≤0.125, R ≥0.25
+    'C_ASFU': [7, 6],
+
+    # Itraconazole: S ≤1, R ≥2
+    'D_ASFU': [5, 4],
+
+    # Isavuconazole: S ≤1, R ≥2
+    'E_ASFU': [5, 4],
+
+    # Olorofim
+    'F_ASFU': [np.nan, np.nan]
+}
+
+breakpoint_dict_C = {
+    # C. albicans — unchanged
+    'A_CDAL': [4, 3],
+    'B_CDAL': [np.nan, np.nan],
+    'C_CDAL': [8, 5],
+    'D_CDAL': [8, 7],
+    'E_CDAL': [10, 9],
+    'F_CDAL': [8, 7],
+    'G_CDAL': [7, 5],
+    'H_CDAL': [9, 8],
+
+    # C. dubliniensis — unchanged
+    'A_CDDU': [4, 3],
+    'B_CDDU': [np.nan, np.nan],
+    'C_CDDU': [8, 5],
+    'D_CDDU': [8, 7],
+    'E_CDDU': [9, 8],
+    'F_CDDU': [8, 7],
+    'G_CDDU': [7, 5],
+    'H_CDDU': [8, 7],
+
+    # C. glabrata — H_CDGL updated
+    'A_CDGL': [4, 3],
+    'B_CDGL': [np.nan, np.nan],
+    'C_CDGL': [np.nan, np.nan],
+    'D_CDGL': [np.nan, np.nan],
+    'E_CDGL': [8, 7],
+    'F_CDGL': [np.nan, np.nan],
+    'G_CDGL': [11, 3],  # guideline S=0.001 out of range - I set to G11, which corresponds to 0.125 mg/L assuming no strains will be so sensitive - to check
+    'H_CDGL': [8, 7],            # updated
+
+    # C. krusei — unchanged
+    'A_CDKR': [4, 3],
+    'B_CDKR': [np.nan, np.nan],
+    'C_CDKR': [np.nan, np.nan],
+    'D_CDKR': [np.nan, np.nan],
+    'E_CDKR': [8, 7],
+    'F_CDKR': [np.nan, np.nan],
+    'G_CDKR': [np.nan, np.nan],
+    'H_CDKR': [np.nan, np.nan],
+
+    # C. parapsilosis — unchanged
+    'A_CDPA': [4, 3],
+    'B_CDPA': [np.nan, np.nan],
+    'C_CDPA': [7, 5],
+    'D_CDPA': [8, 7],
+    'E_CDPA': [2, 1],
+    'F_CDPA': [7, 6],
+    'G_CDPA': [7, 5],
+    'H_CDPA': [2, 1],
+
+    # C. tropicalis — C_CDTR updated
+    'A_CDTR': [4, 3],
+    'B_CDTR': [np.nan, np.nan],
+    'C_CDTR': [7, 5],
+    'D_CDTR': [8, 7],
+    'E_CDTR': [8, 7],
+    'F_CDTR': [7, 6],
+    'G_CDTR': [7, 5],
+    'H_CDTR': [8, 7],
+
+    # C. auris — E, G, H updated
+    'A_CDAU': [11, 2],            # ⚠️ guideline S=0.001 out of range - I made it well 11, A11 = 0.008 mg/L - to check if there are no CDAU strains with such low MICs.
+    'B_CDAU': [np.nan, np.nan],
+    'C_CDAU': [np.nan, np.nan],
+    'D_CDAU': [np.nan, np.nan],
+    'E_CDAU': [6, 5],            # updated
+    'F_CDAU': [np.nan, np.nan],
+    'G_CDAU': [np.nan, np.nan],  # updated: removed (IE in new guideline)
+    'H_CDAU': [6, 5],            # updated
+
+    # Other Candida — unchanged
+    'A_other': [np.nan, np.nan],
+    'B_other': [np.nan, np.nan],
+    'C_other': [np.nan, np.nan],
+    'D_other': [np.nan, np.nan],
+    'E_other': [np.nan, np.nan],
+    'F_other': [np.nan, np.nan],
+    'G_other': [7, 5],
+    'H_other': [np.nan, np.nan],
+}
+
 # Op 28 juni breakpoint svoor olorofim vervangen door np.NaN, dit was [1,2] - geen idee waar dat vandaan kwam
-breakpoint_dict_A = {'A_ASFU': [5, 4], 'B_ASFU': [5, 3], 'C_ASFU': [7, 5], 'D_ASFU': [5, 3], 'E_ASFU': [5, 3], 'F_ASFU': [np.NaN, np.NaN]}
+breakpoint_dict_A_last_before_2026 = {'A_ASFU': [5, 4], 'B_ASFU': [5, 3], 'C_ASFU': [7, 5], 'D_ASFU': [5, 3], 'E_ASFU': [5, 3], 'F_ASFU': [np.NaN, np.NaN]}
+
+# Updated with EUCAST V11 TABLES 4 AUG 2025 + tentative CDC breakpoint for micafungin added (amfo B, fluco and anidula were already in)
+breakpoint_dict_C_last_before_2026 = {
+'A_CDAL': [4, 3], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [8, 5], 'D_CDAL': [8, 7], 'E_CDAL': [10, 9], 'F_CDAL': [8, 7], 'G_CDAL': [7, 5], 'H_CDAL': [9, 8],
+'A_CDDU': [4, 3], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [8, 5], 'D_CDDU': [8, 7], 'E_CDDU': [9, 8], 'F_CDDU': [8, 7], 'G_CDDU': [7, 5], 'H_CDDU': [8, 7],
+'A_CDGL': [4, 3], 'B_CDGL': [np.NaN, np.NaN], 'C_CDGL': [np.NaN, np.NaN], 'D_CDGL': [np.NaN, np.NaN], 'E_CDGL': [8, 7], 'F_CDGL': [np.NaN, np.NaN], 'G_CDGL': [11, 3], 'H_CDGL': [9, 8],
+'A_CDKR': [4, 3], 'B_CDKR': [np.NaN, np.NaN], 'C_CDKR': [np.NaN, np.NaN], 'D_CDKR': [np.NaN, np.NaN], 'E_CDKR': [8, 7], 'F_CDKR': [np.NaN, np.NaN], 'G_CDKR': [np.NaN, np.NaN], 'H_CDKR': [np.NaN, np.NaN],
+'A_CDPA': [4, 3], 'B_CDPA': [np.NaN, np.NaN], 'C_CDPA': [7, 5], 'D_CDPA': [8, 7], 'E_CDPA': [2, 1], 'F_CDPA': [7, 6], 'G_CDPA': [7, 5], 'H_CDPA': [2, 1],
+'A_CDTR': [4, 3], 'B_CDTR': [np.NaN, np.NaN], 'C_CDTR': [7, 5], 'D_CDTR': [8, 7], 'E_CDTR': [8, 7], 'F_CDTR': [7, 6], 'G_CDTR': [7, 5], 'H_CDTR': [8, 7],
+'A_CDAU': [4, 3], 'B_CDAU': [np.NaN, np.NaN], 'C_CDAU': [np.NaN, np.NaN], 'D_CDAU': [np.NaN, np.NaN], 'E_CDAU': [3, 2], 'F_CDAU': [np.NaN, np.NaN], 'G_CDAU': [4, 3], 'H_CDAU': [3, 2],
+'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [7, 5], 'H_other': [np.NaN, np.NaN]}
+
 
 """
 MIC_well_number >= breakpoint_list[0]:             ref_cat = 'S' 
@@ -21,7 +134,7 @@ MIC_well_number <= breakpoint_list[1]:             ref_cat = 'R'
 # note: vorico MIC for A. fumigatus >1 mg/mL is considered resistant, but MIC 2 mg/mL is still considered ATU: both categories are overlapping 
 # as it is encoded here, 2 mg/mL is in a separate category from R, unlike EUCAST - however ATU_VME (predicted S instead of ATU) can be penalized as VME while defining thresholds, therefore considering it as R
 
-# OBSOLETE - updated with EUCAST V11 TABLES 4 AUG 2025
+# OBSOLETE 
 breakpoint_dict_C_legacy_MICs = {
 'A_CDAL': [1, 2], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [0.06, 0.5], 'D_CDAL': [0.06, 0.12], 'E_CDAL': [0.03, 0.06], 'F_CDAL': [0.06, 0.12], 'G_CDAL': [2, 8], 'H_CDAL': [0.016, 0.064],
 'A_CDDU': [1, 2], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [0.06, 0.5], 'D_CDDU': [0.06, 0.12], 'E_CDDU': [np.NaN, np.NaN], 'F_CDDU': [0.06, 0.12], 'G_CDDU': [2, 8], 'H_CDDU': [np.NaN, np.NaN],
@@ -32,7 +145,7 @@ breakpoint_dict_C_legacy_MICs = {
 'A_CDAU': [1, 2], 'B_CDAU': [np.NaN, np.NaN], 'C_CDAU': [np.NaN, np.NaN], 'D_CDAU': [np.NaN, np.NaN], 'E_CDAU': [2, 4], 'F_CDAU': [np.NaN, np.NaN], 'G_CDAU': [16, 32], 'H_CDAU': [np.NaN, np.NaN],
 'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [2, 8], 'H_other': [np.NaN, np.NaN]}
 
-# OBSOLETE - updated with EUCAST V11 TABLES 4 AUG 2025
+# OBSOLETE
 breakpoint_dict_C_legacy = {
 'A_CDAL': [4, 3], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [8, 5], 'D_CDAL': [8, 7], 'E_CDAL': [9, 8], 'F_CDAL': [8, 7], 'G_CDAL': [7, 5], 'H_CDAL': [10, 8],
 'A_CDDU': [4, 3], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [8, 5], 'D_CDDU': [8, 7], 'E_CDDU': [np.NaN, np.NaN], 'F_CDDU': [8, 7], 'G_CDDU': [7, 5], 'H_CDDU': [np.NaN, np.NaN],
@@ -44,7 +157,8 @@ breakpoint_dict_C_legacy = {
 'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [7, 5], 'H_other': [np.NaN, np.NaN]}
 
 
-# Updated with EUCAST V11 TABLES 4 AUG 2025 + tentative CDC breakpoint for micafungin added (amfo B, fluco and anidula were already in)
+
+
 breakpoint_dict_C_MICs = {
 'A_CDAL': [1, 2], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [0.06, 0.5], 'D_CDAL': [0.06, 0.12], 'E_CDAL': [0.016, 0.03], 'F_CDAL': [0.06, 0.12], 'G_CDAL': [2, 8], 'H_CDAL': [0.03, 0.06],
 'A_CDDU': [1, 2], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [0.06, 0.5], 'D_CDDU': [0.06, 0.12], 'E_CDDU': [0.03, 0.06], 'F_CDDU': [0.06, 0.12], 'G_CDDU': [2, 8], 'H_CDDU': [0.06, 0.12],
@@ -55,15 +169,6 @@ breakpoint_dict_C_MICs = {
 'A_CDAU': [1, 2], 'B_CDAU': [np.NaN, np.NaN], 'C_CDAU': [np.NaN, np.NaN], 'D_CDAU': [np.NaN, np.NaN], 'E_CDAU': [2, 4], 'F_CDAU': [np.NaN, np.NaN], 'G_CDAU': [16, 32], 'H_CDAU': [2, 4],
 'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [2, 8], 'H_other': [np.NaN, np.NaN]}
 
-breakpoint_dict_C = {
-'A_CDAL': [4, 3], 'B_CDAL': [np.NaN, np.NaN], 'C_CDAL': [8, 5], 'D_CDAL': [8, 7], 'E_CDAL': [10, 9], 'F_CDAL': [8, 7], 'G_CDAL': [7, 5], 'H_CDAL': [9, 8],
-'A_CDDU': [4, 3], 'B_CDDU': [np.NaN, np.NaN], 'C_CDDU': [8, 5], 'D_CDDU': [8, 7], 'E_CDDU': [9, 8], 'F_CDDU': [8, 7], 'G_CDDU': [7, 5], 'H_CDDU': [8, 7],
-'A_CDGL': [4, 3], 'B_CDGL': [np.NaN, np.NaN], 'C_CDGL': [np.NaN, np.NaN], 'D_CDGL': [np.NaN, np.NaN], 'E_CDGL': [8, 7], 'F_CDGL': [np.NaN, np.NaN], 'G_CDGL': [11, 3], 'H_CDGL': [9, 8],
-'A_CDKR': [4, 3], 'B_CDKR': [np.NaN, np.NaN], 'C_CDKR': [np.NaN, np.NaN], 'D_CDKR': [np.NaN, np.NaN], 'E_CDKR': [8, 7], 'F_CDKR': [np.NaN, np.NaN], 'G_CDKR': [np.NaN, np.NaN], 'H_CDKR': [np.NaN, np.NaN],
-'A_CDPA': [4, 3], 'B_CDPA': [np.NaN, np.NaN], 'C_CDPA': [7, 5], 'D_CDPA': [8, 7], 'E_CDPA': [2, 1], 'F_CDPA': [7, 6], 'G_CDPA': [7, 5], 'H_CDPA': [2, 1],
-'A_CDTR': [4, 3], 'B_CDTR': [np.NaN, np.NaN], 'C_CDTR': [7, 5], 'D_CDTR': [8, 7], 'E_CDTR': [8, 7], 'F_CDTR': [7, 6], 'G_CDTR': [7, 5], 'H_CDTR': [8, 7],
-'A_CDAU': [4, 3], 'B_CDAU': [np.NaN, np.NaN], 'C_CDAU': [np.NaN, np.NaN], 'D_CDAU': [np.NaN, np.NaN], 'E_CDAU': [3, 2], 'F_CDAU': [np.NaN, np.NaN], 'G_CDAU': [4, 3], 'H_CDAU': [3, 2],
-'A_other': [np.NaN, np.NaN], 'B_other': [np.NaN, np.NaN], 'C_other': [np.NaN, np.NaN], 'D_other': [np.NaN, np.NaN], 'E_other': [np.NaN, np.NaN], 'F_other': [np.NaN, np.NaN], 'G_other': [7, 5], 'H_other': [np.NaN, np.NaN]}
 
 #Nieuwe inzichten 2  juni: aspergillus, neem voor alles fotometrische waardes (algoritme 1 dat Eagle negeert), maar met amfo B correctie. Verwijder amfo B waarde van ASFU_R_TR34_1
 # Schrap twee stalen: ASFU_S_8, ASFU_R_23
