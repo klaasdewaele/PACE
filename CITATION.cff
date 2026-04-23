@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: "PACE: Parameter ensemble, Adaptive thresholds, Clinical optimization, and MIC Extrapolation"
+message: "If you use this software or data, please cite the accompanying publication."
+type: software
+authors:
+  - family-names: Dewaele
+    given-names: Klaas
+    orcid: ""
+license: MIT
+repository-code: "https://github.com/klaasdewaele/PACE"
+preferred-citation:
+  type: article
+  title: "Same-day MIC results in drug-resistant Aspergillus fumigatus and Candida auris using live-cell imaging of a broth microdilution assay"
+  authors:
+    - family-names: Dewaele
+      given-names: Klaas
+  journal: "Journal of Clinical Microbiology"
+  year: 2026

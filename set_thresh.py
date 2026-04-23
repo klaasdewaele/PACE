@@ -1,38 +1,61 @@
-#!/home/kdewaele/.conda/envs/ocelloscope_env/bin/python 
-#!/Users/kdewaele/miniconda3/envs/ocelloscope/bin/python
+#!/usr/bin/env python3
+"""
+set_thresh.py — PACE MIC threshold optimisation pipeline.
+
+For each antimycotic (supplied via -a), this script:
+  1. Extracts kinetic features from time-lapse absorbance measurements.
+  2. Sweeps a set of thresholds and detects the growth/no-growth pattern
+     that best predicts the reference MIC (from dictionaries.MIC_dict_*).
+  3. Selects the parameter-threshold pair that maximises essential agreement
+     (EA) and/or categorical agreement (CA) with the reference MIC.
+  4. Applies an optional systematic-bias correction and plots results.
+
+Usage example:
+    python set_thresh.py -g A -a B -i data/aspergillus -t '(0,172800,1800)' \
+        -s '[0.0,1.0,0.01]' -c '[("CA",0.9)]' -l info
+
+Run with -h for a full description of all arguments.
+"""
 
 import argparse
-import pandas as pd
-import numpy as np
-import os
-import math
-import pprint
-from datetime import datetime
-import statistics
-import logging
-import itertools
-import pickle
 import ast
 import glob
-from oCelloscope_tools import dictionaries
-from oCelloscope_tools import setup
-from oCelloscope_tools import data_extraction
-from oCelloscope_tools import plot
-from oCelloscope_tools import predict
-from oCelloscope_tools import evaluate
-import subprocess
-import sys
+import itertools
 import json
+import logging
+import math
+import os
+import pickle
+import pprint
 import random
 import re
+import statistics
+import subprocess
+import sys
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
+
+from pace_tools import data_extraction
+from pace_tools import dictionaries
+from pace_tools import evaluate
+from pace_tools import plot
+from pace_tools import predict
+from pace_tools import setup
+
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
-home = '/scratch/leuven/348/vsc34807/oCelloscope' # Default folder for storing pipeline output 
-home = '/home/kdewaele/ocelloscope/output' 
-# copy_path used in evaluate.get_best_parameter() function for copying summary data for all runs to a single folder
-copy_path = '/scratch/leuven/348/vsc34807/summary'
-copy_path = '/home/kdewaele/ocelloscope/output/summary'
-scripts_dir = '/home/kdewaele/ocelloscope/scripts'
+# Default output directory (used when -o is not provided).
+# Override with -o <path> on the command line.
+home = os.getcwd()
+
+# Directory for copying summary result files; defaults to the session output
+# directory (set after output_dir is created below).
+copy_path = None
+
+# Location of this script, used for recursive sub-process calls.
+scripts_dir = os.path.dirname(os.path.abspath(__file__))
 
 def cleanup_temporary_pkl_files(output_dir, timepoint=None, antimycotic=None, keep_performance_files=True, recursive=False):
     """
@@ -288,7 +311,8 @@ else:
 label = f"{str(args.g)}_{str(args.a)}_{criteria_label}_time_{start}{end_label}_bias_{str(args.m)}_{str(args.n)}"
 
 # Set-up output directory
-output_dir, session_time  = setup.output_setup(str(args.o), home, label)
+output_dir, session_time = setup.output_setup(str(args.o), home, label)
+copy_path = output_dir  # summary copies go to the same session folder by default
 
 # Set-up log file handler: will be saved in home directory - add output_dir if it must be in session folder
 handler = logging.FileHandler(os.path.join(home, output_dir, f"{label}.log"))

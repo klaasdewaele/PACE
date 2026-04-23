@@ -2,6 +2,8 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-__pycache__/
-__pycache__/
+*.swp
+.DS_Store
+*.pkl
+*.log
+slurm-*.out

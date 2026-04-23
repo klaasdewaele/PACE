@@ -3,11 +3,11 @@
 #SBATCH --ntasks=1 --cpus-per-task=8
 #SBATCH --time=30:30:00
 #SBATCH --job-name=a_a
-#SBATCH --mail-user=klaasdewaele@gmail.com
+#SBATCH --mail-user=your_email@institution.edu
 #BATCH --mail-type=FAIL
-#SBATCH -A lp_ea_group
+#SBATCH -A your_hpc_account
 
-source /user/leuven/348/vsc34807/.bashrc 
-source activate ocelloscope
-cd $VSC_DATA/miniconda3/envs/ocelloscope/bin/
-set_thresh.py -g C -i $VSC_DATA/candida -d $VSC_SCRATCH/oCelloscope/genus_C_d_window_6.pkl -l info -a E -t '(18000, 87000, 1800)' -s '[0.0, 1.0, 0.01]' -n 27_jun_prop_m2 -m "[2]"
+# source your HPC environment here 
+source activate your_env_name
+# cd to your pipeline directory
+set_thresh.py -g C -i $VSC_DATA/candida -d output/genus_C_d_window_6.pkl -l info -a E -t '(18000, 87000, 1800)' -s '[0.0, 1.0, 0.01]' -n 27_jun_prop_m2 -m "[2]"

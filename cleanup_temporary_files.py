@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Standalone script to clean up temporary pkl files from oCelloscope analysis directories.
+Standalone script to clean up temporary pkl files from PACE analysis directories.
 This can be used to clean up existing directories that have accumulated temporary files.
 
 Usage:
@@ -101,7 +101,7 @@ def cleanup_temporary_pkl_files(output_dir, dry_run=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Clean up temporary pkl files from oCelloscope analysis directories"
+        description="Clean up temporary pkl files from PACE analysis directories"
     )
     parser.add_argument(
         "directory",
