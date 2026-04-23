@@ -4,7 +4,7 @@
 
 Companion code and data for:
 
-> Dewaele K *et al.* Same-day MIC results in drug-resistant *Aspergillus fumigatus* and *Candida auris* using live-cell imaging of a broth microdilution assay. *Journal of Clinical Microbiology*, 2026.
+> Dewaele K *et al.* Same-day MIC results in drug-resistant *Aspergillus fumigatus* and *Candida auris* using live-cell imaging of a broth microdilution assay. *Manuscript submitted for publication*, 2026.
 
 ---
 
@@ -185,7 +185,7 @@ python pace_tools/examine_pickles.py output/my_session/performance_summary.pkl
 
 If you use this code or data, please cite:
 
-> Dewaele K *et al.* Same-day MIC results in drug-resistant *Aspergillus fumigatus* and *Candida auris* using live-cell imaging of a broth microdilution assay. *Journal of Clinical Microbiology*, 2026.
+> Dewaele K *et al.* Same-day MIC results in drug-resistant *Aspergillus fumigatus* and *Candida auris* using live-cell imaging of a broth microdilution assay. *Manuscript submitted for publication*, 2026.
 
 ---
 
