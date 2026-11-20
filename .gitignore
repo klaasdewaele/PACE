@@ -7,3 +7,8 @@ __pycache__/
 *.pkl
 *.log
 slurm-*.out
+# PACE run outputs (session folders, data dictionaries, analysis results)
+output/
+results/
+/A_*_time_*/
+/C_*_time_*/

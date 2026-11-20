@@ -41,12 +41,17 @@ eucast_C = {'A': 0.10, 'B': 0.50, 'C': 0.50, 'D': 0.50, 'E': 0.50, 'F': 0.50, 'G
 # Encoding:
 #   breakpoint_list[0]  → susceptible (S) if MIC well number >= this value
 #   breakpoint_list[1]  → resistant (R)   if MIC well number <= this value
-#   Wells between the two values correspond to ATU / intermediate category.
+#   Wells between the two values form a third category, labelled 'ATU' in
+#   predict.py; for Candida this is the EUCAST I category (susceptible,
+#   increased exposure). Errors involving it are counted as ATU_VME / ATU_ME.
 #
-# Note for voriconazole (B) against A. fumigatus:
-#   MIC 2 mg/L is formally ATU in EUCAST, but overlaps with R.
-#   Here it is kept as a separate ATU category; ATU_VME (predicted S
-#   instead of ATU) can be penalised as VME when optimising thresholds.
+# A. fumigatus has no gap in this encoding (S and R wells are adjacent), so
+# the two EUCAST v12 areas of technical uncertainty (ATU), isavuconazole
+# 2 mg/L and posaconazole 0.25 mg/L, count as R during threshold optimisation.
+# The paper reports categories after resolving them with the breakpoint-table
+# notes (isavuconazole 2 mg/L is S when voriconazole is <= 1 mg/L; posaconazole
+# 0.25 mg/L is S when itraconazole is <= 1 mg/L). That rule is applied
+# afterwards, in analysis/pace_analysis/eucast_atu.py.
 # ---------------------------------------------------------------------------
 
 breakpoint_dict_A = {
@@ -155,12 +160,12 @@ breakpoint_dict_C = {
 #   ASFU_ATCC_204305_S  — ATCC quality-control strain (susceptible)
 #   ASFU_S_1 … ASFU_S_7 — clinical susceptible isolates
 #   ASFU_R_TR34_*       — azole-resistant isolates with TR34/L98H mechanism
-#   ASFU_R_TR46_*       — azole-resistant isolates with TR46/Y121F/M172I mechanism
+#   ASFU_R_TR46_*       — azole-resistant isolates with TR46/Y121F/T289A mechanism
 #   ASFU_R_unknown_22   — azole-resistant isolate, resistance mechanism unknown
 # ---------------------------------------------------------------------------
 
 MIC_dict_A = {
-    'ASFU_ATCC_204305_S': {'A': 'A6', 'B': 'B5', 'C': 'C8', 'D': 'D7', 'E': 'E4', 'F': 'F3'},
+    'ASFU_ATCC_204305_S': {'A': 'A6', 'B': 'B5', 'C': 'C8', 'D': 'D7', 'E': 'E4', 'F': 'F8'},  # olorofim 0.06 mg/L (set MIC, Supplementary Figure S1C); was 'F3' (2 mg/L) before the revision
     'ASFU_R_TR34_1':  {'A': 'Z0', 'B': 'B4', 'C': 'C5', 'D': 'D0', 'E': 'E2', 'F': 'Z0'},  # amphotericin B excluded (suspect run quality)
     'ASFU_R_TR34_2':  {'A': 'A7', 'B': 'B4', 'C': 'C5', 'D': 'D0', 'E': 'E3', 'F': 'F8'},
     'ASFU_R_TR34_3':  {'A': 'A6', 'B': 'B1', 'C': 'C4', 'D': 'D0', 'E': 'E0', 'F': 'F5'},

@@ -534,7 +534,12 @@ def get_denominators(antimycotic):
                 no_breakpoint.append(file)
                 logging.debug(f'--- --- --- --- No entry for species {species} (file {file}) in breakpoint_dict')
             
-    data = list(set(filelist) - set(no_data))
+    # Isolate-drug pairs without a valid reference MIC ('Z0' in MIC_dict) cannot be scored: exclude them from the EA and
+    # CA denominators. Without this, int('Z0'[1:]) = 0 aligns their wells to a column above the highest concentration
+    # (data_extraction.extract_parameter) and the pair is scored against it whenever its row was imaged.
+    no_reference = [file for file in filelist if MIC_dict[file][antimycotic].startswith('Z')]
+    logging.info(f'--- --- No reference MIC for {no_reference}')
+    data = list(set(filelist) - set(no_data) - set(no_reference))
     breakpoint = list(set(data) - set(no_breakpoint))
     logging.info(f'--- --- Files with available data ({len(data)})')
     logging.info(f'--- --- No data available for {no_data}')
