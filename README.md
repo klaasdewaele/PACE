@@ -24,22 +24,6 @@ Results reported in the paper (first timepoint at which the ensemble reaches at 
 
 ---
 
-## Changes in this version (revised manuscript)
-
-- `set_thresh.py`: isolate-drug pairs without a valid reference MIC (code `Z0` in `dictionaries.py`) are excluded from
-  the EA and CA denominators. Before, three such pairs (amphotericin B of ASFU_R_TR34_1; olorofim of ASFU_R_TR34_10 and
-  ASFU_R_TR46_20) could be scored against a non-existent reference.
-- `pace_tools/dictionaries.py`: the olorofim reference MIC of the QC strain ATCC 204305 is 0.06 mg/L (`F8`, the set MIC
-  of Supplementary Figure S1C), not 2 mg/L (`F3`). Comments on the ATU encoding and the TR46 genotype corrected.
-- `commands_phase2_aspergillus.txt`: amphotericin B and olorofim triplets re-derived with both corrections. The other
-  *A. fumigatus* triplets and all *Candida* triplets are unchanged.
-- New `analysis/` folder: the phase-2 triplet selection, the phase-3 ensemble, the EUCAST ATU rule and categorical
-  scoring used in the paper, the leave-one-isolate-out cross-validation, and the class-level azole call.
-- New `supplementary_tables/` folder: Supplementary Tables S1-S3 of the paper, with their legends. The analysis
-  scripts reproduce their values (steps 3 and 4 below).
-
----
-
 ## Repository structure
 
 ```
