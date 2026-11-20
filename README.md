@@ -35,6 +35,8 @@ Results reported in the paper (first timepoint at which the ensemble reaches at 
   *A. fumigatus* triplets and all *Candida* triplets are unchanged.
 - New `analysis/` folder: the phase-2 triplet selection, the phase-3 ensemble, the EUCAST ATU rule and categorical
   scoring used in the paper, the leave-one-isolate-out cross-validation, and the class-level azole call.
+- New `supplementary_tables/` folder: Supplementary Tables S1-S3 of the paper, with their legends. The analysis
+  scripts reproduce their values (steps 3 and 4 below).
 
 ---
 
@@ -59,12 +61,16 @@ Results reported in the paper (first timepoint at which the ensemble reaches at 
 │   ├── dictionaries.py               # reference MICs, EUCAST v12 breakpoints, species, plate layout
 │   ├── evaluate.py                   # EA, CA, VME, ME and threshold selection
 │   ├── predict.py                    # growth/no-growth pattern detection and MIC prediction
-│   ├── plot.py, setup.py, phot_dict.py, examine_pickles.py
-└── analysis/
-    ├── select_triplets.py            # phase 2: triplets from the phase-1 runs -> phase-2 commands
-    ├── run_ensembles.py              # phase 3: ensembles, times to result, Figure 5 values, Text S2, Tables S1 and S3
-    ├── run_loocv.py                  # leave-one-isolate-out cross-validation (Table S2)
-    └── pace_analysis/                # shared code (ensemble rule, triplet rule, EUCAST ATU rule, scoring)
+│   └── plot.py, setup.py, phot_dict.py, examine_pickles.py
+├── analysis/
+│   ├── select_triplets.py            # phase 2: triplets from the phase-1 runs -> phase-2 commands
+│   ├── run_ensembles.py              # phase 3: ensembles, times to result, Figure 5 values, Text S2, Tables S1 and S3
+│   ├── run_loocv.py                  # leave-one-isolate-out cross-validation (Table S2)
+│   └── pace_analysis/                # shared code (ensemble rule, triplet rule, EUCAST ATU rule, scoring)
+└── supplementary_tables/             # Supplementary Tables S1-S3 of the paper (legend on the first sheet)
+    ├── Table_S1_reference_vs_PACE_MICs.xlsx
+    ├── Table_S2_crossvalidated_time_to_result.xlsx
+    └── Table_S3_azole_class_calls.xlsx
 ```
 
 ---
@@ -144,8 +150,13 @@ python3 analysis/run_ensembles.py --phase2 PHASE2_DIR --out results/
 | `figure5_schedules.txt` | Supplementary Text S2 (ensemble per drug) |
 | `figure5_metrics.csv`, `figure5.png` | Figure 5 (EA, CA, VME and ME per timepoint) |
 | `figure5_time_to_result.csv` | times to result, with EA and categorical errors at that time |
-| `figure5_predicted_mics.csv` | Supplementary Table S1 (reference and predicted MIC per isolate and timepoint) |
-| `figure5_azole_class_calls.csv`, `figure5_azole_class_summary.csv` | Supplementary Table S3 |
+| `figure5_predicted_mics.csv` | Table S1: reference and PACE MIC, category and EA per isolate, here at every timepoint (Table S1 shows the time to result, 24 h and 48 h); also sheet Predicted MICs of Table S3 |
+| `figure5_azole_class_calls.csv` | Table S3, sheet Calls: predicted azole categories, integrated call and check per isolate and timepoint |
+| `figure5_azole_class_summary.csv` | Table S3, sheet Summary: counts per timepoint for the integrated call |
+
+The tables themselves are in `supplementary_tables/`. The comparison rows on sheet Summary of Table S3 (one-R rule,
+each azole alone) follow from the per-azole categories in `figure5_azole_class_calls.csv` and
+`figure5_predicted_mics.csv`.
 
 `--which s10` gives the CA-optimised ensembles of Supplementary Figure S10 instead.
 
@@ -168,6 +179,11 @@ with the resulting ensemble. No PACE re-runs are needed: a phase-1 run stores ev
 threshold, and with proportional thresholds an isolate's prediction does not depend on the other isolates. The script
 reads the per-timepoint files `performance_dict_<row>_<time>_EA.pkl` of the EA phase-1 runs; do not run
 `cleanup_temporary_files.py` on those folders before this step.
+
+`table_s2_loocv.csv` holds the values of Table S2 (`supplementary_tables/Table_S2_crossvalidated_time_to_result.xlsx`).
+`loocv_by_time.csv` gives the EA per timepoint, in-sample and cross-validated. `loocv_checks.txt` reports, per drug,
+whether the triplets re-derived from phase 1 equal the phase-2 runs and whether the in-sample schedule equals the
+Figure 5 ensemble.
 
 ---
 
